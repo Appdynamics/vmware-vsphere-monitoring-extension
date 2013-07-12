@@ -1,7 +1,7 @@
 <project default="build">
     <property name="build.dir" value="dist" />
     <property name="conf.dir" value="conf" />
-    <property name="project.name" value="vmware"/>
+    <property name="project.name" value="VMWareMonitor"/>
     <property name="machine.agent.jar" value="lib/machineagent/machineagent.jar"/>
     <property name="log.jar" value="lib/log4j/log4j-1.2.15.jar"/>
     <property name="dom4j.jar" value="lib/dom4j/dom4j-1.6.1.jar"/>
@@ -17,17 +17,25 @@
     <target name="build">
         <mkdir dir="${build.dir}/classes"/>
         <javac destdir="${build.dir}/classes" srcdir="src/main/java" classpathref="cp" debug="on"/>
-        <jar destfile="${build.dir}/${project.name}.jar">
+        <mkdir dir="${build.dir}/VMWareMonitor"/>
+        <mkdir dir="${build.dir}/VMWareMonitor/lib"/>
+        <jar destfile="${build.dir}/VMWareMonitor/${project.name}.jar">
             <fileset dir="${build.dir}/classes"/>
         </jar>
-        <copy todir="${build.dir}/">
+        <copy todir="${build.dir}/VMWareMonitor/">
             <fileset dir="${conf.dir}" includes="monitor.xml"/>
         </copy>
-        <copy todir="${build.dir}/">
-            <fileset dir="${lib.dir}" includes="vijava5120121125.jar"/>
-            <fileset dir="${lib.dir}" includes="dom4j-1.6.1.jar"/>
+        <copy todir="${build.dir}/VMWareMonitor/lib">
+            <fileset dir="${lib.dir}/vijava" includes="vijava5120121125.jar"/>
+            <fileset dir="${lib.dir}/dom4j" includes="dom4j-1.6.1.jar"/>
         </copy>
         <delete dir="${build.dir}/classes"/>
+    </target>
+    <target name="package" depends="build">
+        <zip destfile="${build.dir}/VMWareMonitor.zip">
+            <zipfileset dir="${build.dir}/VMWareMonitor" filemode="755" prefix="VMWareMonitor/"/>
+        </zip>
+        <delete dir="${build.dir}/VMWareMonitor"/>
     </target>
     <target name="clean">
         <delete dir="${build.dir}"/>
