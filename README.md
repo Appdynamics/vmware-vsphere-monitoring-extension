@@ -1,12 +1,5 @@
 # AppDynamics VMWare Monitoring Extension
 
-- [Use Case](vmware-readme.md#use-case)
-- [Installation](vmware-readme.md#installation)
-    - [Example XML](vmware-readme.md#example-xml)
-    - [Rebuilding the Project](vmware-readme.md#rebuilding-the-project)
-- [Metrics](vmware-readme.md#metrics)
-- [Files and Folders](vmware-readme.md#files-and-folders)
-- [Contributing](vmware-readme.md#contributing)
 
 ##Use Case
 
@@ -29,58 +22,28 @@ Metrics include:
 * Swapped Memory
 * Uptime
 
-##Installation
 
-1. In \<machine-agent-home\>/monitors create a new subdirectory for the extension.
-2. Copy the contents in the 'dist' folder to the folder made in step 1.
-3. Open monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials).
-4. Restart the Machine A1gent.
-5. Metrics will be uploaded to: Application Infrastructure Performance|\<Node\>|Custom Metrics|VMWare|Status.
-
-### Example XML
-
-    <monitor>
-	    <name>VMWareMonitor</name>
-	    <type>managed</type>
-	    <description>VMWare Monitor</description>
-	    <monitor-configuration></monitor-configuration>
-	    <monitor-run-task>
-		    <execution-style>periodic</execution-style>
-		    <execution-frequency-in-seconds>60</execution-frequency-in-seconds>
-		    <name>VMWare Monitor Run Task</name>
-		    <display-name>VMWare Monitor Task</display-name>
-		    <description>VMWare Monitor Task</description>
-		    <type>java</type>
-		    <execution-timeout-in-secs>60</execution-timeout-in-secs>
-		    <task-arguments>
-			    <argument name="host" is-required="true" default-value="vcenter.url.com" />
-			    <argument name="username" is-required="true" default-value="user1" />
-			    <argument name="password" is-required="true" default-value="pass1" />
-		    </task-arguments>
-		    <java-task>
-			<classpath>vmware.jar;vijava5120121125.jar;dom4j-1.6.1.jar</classpath>
-			    <impl-class>com.appdynamics.monitors.vmware.VMWareMonitor</impl-class>
-		    </java-task>
-	    </monitor-run-task>
-    </monitor>
-
-###Rebuilding the Project
-
-1. Go to root directory (where all the files are located) through command line
-2. Type "ant" (without the quotes)
-3. 'dist' will be updated with the monitor.xml, vmware.jar, and other libraries
-
-##Files and Folders
+##Included Files and Folders
 
 | Files/Folder | Description |
 | --- | --- |
-| bin | Contains class files |
 | conf | Contains the monitor.xml |
 | lib | Contains third-party project references |
-| src | Contains source code to VMWare Custom Monitor |
-| dist | Contains the final distribution package (monitor.xml, vmware.jar and other libraries) |
+| src | Contains source code to the VMWare Monitoring Extension |
+| dist | Only obtained when using ant. Run 'ant build' to get binaries. Run 'ant package' to get the distributable .zip file |
 | build.xml | Ant build script to package the project (only required if changing java code) |
-| Main Java File | src/com/appdynamics/monitors/vmware/VMWareMonitor.java
+| Main Java File | src/main/java/com/appdynamics/monitors/vmware/VMWareMonitor.java
+
+
+##Installation
+
+1. Run 'ant package' from the vmware-vsphere-monitoring-extension directory
+2. Deploy the file VMWareMonitor.zip found in the 'dist' directory into \<machineagent install dir\>/monitors/
+3. Unzip the deployed file
+4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials).
+5. Restart the machineagent
+6. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
+
 
 ##Metrics
 
