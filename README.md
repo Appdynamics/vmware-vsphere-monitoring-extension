@@ -25,7 +25,7 @@ Metrics include:
 
 ##Files and Folders Included
 
-| Files/Folders | Description |
+| File/Folder | Description |
 | --- | --- |
 | conf | Contains the monitor.xml |
 | lib | Contains third-party project references |
