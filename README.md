@@ -23,7 +23,7 @@ Metrics include:
 * Uptime
 
 
-##Included Files and Folders
+##Files and Folders Included
 
 | Files/Folder | Description |
 | --- | --- |
