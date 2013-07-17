@@ -1,4 +1,4 @@
-# AppDynamics VMWare Monitoring Extension
+# AppDynamics VMWare - Monitoring Extension
 
 
 ##Use Case
@@ -25,7 +25,7 @@ Metrics include:
 
 ##Files and Folders Included
 
-| Files/Folder | Description |
+| Files/Folders | Description |
 | --- | --- |
 | conf | Contains the monitor.xml |
 | lib | Contains third-party project references |
