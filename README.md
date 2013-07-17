@@ -3,9 +3,7 @@
 
 ##Use Case
 
-VMware vSphere ([www.vmware.com](http://www.vmware.com/products/datacenter-virtualization/vsphere/overview.html))
-is a cloud computing virtualization operating system.
-The VMWare extension gets statistics from the VSphere server and displays them in the AppDynamics Metric Browser.
+VMware vSphere ([www.vmware.com](http://www.vmware.com/products/datacenter-virtualization/vsphere/overview.html)) is a cloud computing virtualization operating system. The VMWare extension gets statistics from the VSphere server and displays them in the AppDynamics Metric Browser.
 
 Metrics include:
 
@@ -23,7 +21,17 @@ Metrics include:
 * Uptime
 
 
-##Files and Folders Included
+##Installation
+
+1. Run 'ant package' from the vmware-vsphere-monitoring-extension directory
+2. Deploy the file VMWareMonitor.zip found in the 'dist' directory into \<machineagent install dir\>/monitors/
+3. Unzip the deployed file
+4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials).
+5. Restart the machineagent
+6. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
+
+
+##Directory Structure
 
 | File/Folder | Description |
 | --- | --- |
@@ -33,16 +41,6 @@ Metrics include:
 | dist | Only obtained when using ant. Run 'ant build' to get binaries. Run 'ant package' to get the distributable .zip file |
 | build.xml | Ant build script to package the project (only required if changing java code) |
 | Main Java File | src/main/java/com/appdynamics/monitors/vmware/VMWareMonitor.java
-
-
-##Installation
-
-1. Run 'ant package' from the vmware-vsphere-monitoring-extension directory
-2. Deploy the file VMWareMonitor.zip found in the 'dist' directory into \<machineagent install dir\>/monitors/
-3. Unzip the deployed file
-4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials).
-5. Restart the machineagent
-6. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
 
 
 ##Metrics
@@ -66,11 +64,15 @@ Metric | Description |
 | Uptime | The system uptime of the VM in seconds. |
 
 
+
 ##Contributing
 
-Always feel free to fork and contribute any changes directly via GitHub.
+Always feel free to fork and contribute any changes directly via [GitHub](https://github.com/Appdynamics/vmware-vsphere-monitoring-extension).
 
+##Community
+
+Find out more in the [AppSphere](http://appsphere.appdynamics.com/t5/Extensions/VMware-vSphere-Monitoring-Extension/idi-p/839) community.
 
 ##Support
 
-For any support questions, please contact ace@appdynamics.com.
+For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto://ace-request@appdynamics.com).
