@@ -29,7 +29,7 @@ Metrics include:
 4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials).
 5. Also, the vmnames argument needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs associated with the host will be fetched. If a comma separated list of vmnames is provided, then only those VMs wil be fetched. (see monitor.xml for examples)
 6. Restart the machineagent
-7. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
+7. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status | VMName
 
 
 ##Directory Structure
