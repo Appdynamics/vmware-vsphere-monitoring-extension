@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.vmware.vim25.mo.*;
+import com.vmware.vim25.ws.WSClient;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -32,6 +33,7 @@ public class VMWareMonitor extends AManagedMonitor
 	protected volatile String username;
 	protected volatile String password;
     private ServerConnection serverConnection = null;
+    private boolean stopTask = false;
 
 	protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -58,8 +60,7 @@ public class VMWareMonitor extends AManagedMonitor
             }
         }
         for (ManagedEntity managedEntity: managedEntities) {
-            if (managedEntity == null || !(managedEntity instanceof VirtualMachine))
-            {
+            if (managedEntity == null || !(managedEntity instanceof VirtualMachine)) {
                 throw new Exception("Could not find VM");
             }
             VirtualMachineQuickStats vmStats = ((VirtualMachine)managedEntity).getSummary().getQuickStats();
@@ -148,17 +149,20 @@ public class VMWareMonitor extends AManagedMonitor
 	 * @throws MalformedURLException
 	 * @throws RemoteException 
 	 */
-	public void connect() throws RemoteException, MalformedURLException
+	public void connect() throws Exception
 	{
 		String url = "https://" + host + "/sdk";
-            try {
-                serviceInstance = new ServiceInstance(new URL(url), username, password, true);
-                serverConnection = serviceInstance.getServerConnection();
-            }
-            catch (Exception e) {
-                logger.error("Exception", e);
-            }
-		logger.info("Connection to: " + url + " Successful");
+        try {
+            serviceInstance = new ServiceInstance(new URL(url), username, password, true);
+            WSClient wsc = serviceInstance.getServerConnection().getVimService().getWsc();
+            wsc.setConnectTimeout(30*1000);
+            wsc.setReadTimeout(10*1000);
+            serverConnection = serviceInstance.getServerConnection();
+            logger.info("Connection to: " + url + " Successful");
+        }
+        catch (Exception e) {
+            throw e;
+        }
 	}
 
 	/**
@@ -180,29 +184,52 @@ public class VMWareMonitor extends AManagedMonitor
 	 */
 	public TaskOutput execute(Map<String, String> arg0, TaskExecutionContext arg1) throws TaskExecutionException
 	{
-        try
-		{
-			host = arg0.get("host");
-            username = arg0.get("username");
-            password = arg0.get("password");
+        if (!stopTask) {
+            try
+            {
+                host = arg0.get("host");
+                username = arg0.get("username");
+                password = arg0.get("password");
 
-            String[] splittingNames = arg0.get("vmnames").split(",");
-            for (int i = 0; i < splittingNames.length; i++) {
-                splittingNames[i] = splittingNames[i].replaceAll("\\s","");
+                String[] splittingNames = arg0.get("vmnames").split(",");
+                for (int i = 0; i < splittingNames.length; i++) {
+                    splittingNames[i] = splittingNames[i].replaceAll("\\s","");
+                }
+                vmnames = Arrays.asList(splittingNames);
+
+                connect();
+                populate();
+                close();
+                logger.info("Finished execution");
+                return new TaskOutput("Finished execution");
             }
-            vmnames = Arrays.asList(splittingNames);
-
-            connect();
-            populate();
-			close();
-		}
-		catch (Exception e)
-		{
-			logger.error("Exception: ", e);
-            return new TaskOutput("Failed with error: " + e);
-		}
-        logger.info("Finished execution");
-		return new TaskOutput("Finished execution");
+            catch (NullPointerException npe)
+            {
+                logger.error("NullPointerException: ", npe);
+                stopTask = true;
+                return new TaskOutput("Failed with error: " + npe);
+            }
+            catch (MalformedURLException mue)
+            {
+                logger.error("MalformedURLException: ", mue);
+                return new TaskOutput("Failed with error: " + mue);
+            }
+            catch (RemoteException re)
+            {
+                logger.error("RemoteException: ", re);
+                stopTask = true;
+                return new TaskOutput("Failed with error: " + re);
+            }
+            catch (Exception e)
+            {
+                logger.error("Exception: ", e);
+                return new TaskOutput("Failed with error: " + e);
+            }
+        }
+        else {
+            logger.info("Task has been stopped because of errors!");
+            return new TaskOutput("Task stopped");
+        }
 	}
 
 	/**

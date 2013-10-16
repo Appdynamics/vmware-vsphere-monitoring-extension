@@ -12,9 +12,9 @@
                 <type>java</type>
                 <execution-timeout-in-secs>60</execution-timeout-in-secs>
                 <task-arguments>
-                        <argument name="host" is-required="true" default-value="vcenter.corp.appdynamics.com" />
-                        <argument name="username" is-required="true" default-value="username" />
-                        <argument name="password" is-required="true" default-value="password" />
+                        <argument name="host" is-required="true" default-value="" />
+                        <argument name="username" is-required="true" default-value="" />
+                        <argument name="password" is-required="true" default-value="" />
                         <!-- There two ways to specify this value: "*" or "vmname1,vmname2,..."-->    
                         <!-- "*" means that all VMs associated with the host will be fetched-->
                         <!-- a comma seprated list of vmnames (i.e. "vname1, ...") means that only those vms associated with the host will be fetched-->        
