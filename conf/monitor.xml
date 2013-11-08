@@ -26,7 +26,7 @@
                         <argument name="vmnames" is-required="true" default-value="*"/>
                 </task-arguments>
                 <java-task>
-                    <classpath>VMWareMonitor.jar;lib/vijava5120121125.jar;lib/dom4j-1.6.1.jar</classpath>
+                    <classpath>VMWareMonitor.jar;lib/vijava5120121125.jar;lib/dom4j-1.6.1.jar;lib/javax.xml.bind.jar</classpath>
                         <impl-class>com.appdynamics.monitors.vmware.VMWareMonitor</impl-class>
                 </java-task>
         </monitor-run-task>
