@@ -248,8 +248,26 @@ public class VMWareMonitor extends AManagedMonitor
 			cluster
 		);
 
-		metricWriter.printMetric(String.valueOf(metricValue));
+        if(logger.isDebugEnabled()){
+            logger.debug("Metric key:value before ceiling = "+ metricName + ":" + String.valueOf(metricValue));
+        }
+		metricWriter.printMetric(convertMetricValuesToString(metricValue));
 	}
+
+    /**
+     * Currently, appD controller only supports Integer values. This function will round all the decimals into integers and convert them into strings.
+     * @param attribute
+     * @return
+     */
+    private String convertMetricValuesToString(Object attribute) {
+        if(attribute instanceof Double){
+            return String.valueOf(Math.ceil((Double) attribute));
+        }
+        else if(attribute instanceof Float){
+            return String.valueOf(Math.ceil((Float) attribute));
+        }
+        return attribute.toString();
+    }
 
 	/**
 	 * @return Returns the metric path
