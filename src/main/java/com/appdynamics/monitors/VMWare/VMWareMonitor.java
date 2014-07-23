@@ -34,6 +34,7 @@ public class VMWareMonitor extends AManagedMonitor
 	protected volatile String password;
     private ServerConnection serverConnection = null;
     private boolean stopTask = false;
+    public static final String ONE = "1";
 
 	protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -251,25 +252,35 @@ public class VMWareMonitor extends AManagedMonitor
         if(logger.isDebugEnabled()){
             logger.debug("Metric key:value before ceiling = "+ metricName + ":" + String.valueOf(metricValue));
         }
-		metricWriter.printMetric(convertMetricValuesToString(metricValue));
+		metricWriter.printMetric(toWholeNumberString(metricValue));
 	}
 
     /**
      * Currently, appD controller only supports Integer values. This function will round all the decimals into integers and convert them into strings.
+     * If number is less than 0.5, Math.round will round it to 0 which is not useful on the controller.
      * @param attribute
      * @return
      */
-    private String convertMetricValuesToString(Object attribute) {
+    public static String toWholeNumberString(Object attribute) {
         if(attribute instanceof Double){
-            return String.valueOf(Math.ceil((Double) attribute));
+            Double d = (Double) attribute;
+            if(d > 0 && d < 1.0d){
+                return ONE;
+            }
+            return String.valueOf(Math.round(d));
         }
         else if(attribute instanceof Float){
-            return String.valueOf(Math.ceil((Float) attribute));
+            Float f = (Float) attribute;
+            if(f > 0 && f < 1.0f){
+                return ONE;
+            }
+            return String.valueOf(Math.round((Float) attribute));
         }
         return attribute.toString();
     }
 
-	/**
+
+    /**
 	 * @return Returns the metric path
 	 */
 	public String getMetricPrefix()
