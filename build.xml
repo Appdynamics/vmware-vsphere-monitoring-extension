@@ -8,6 +8,7 @@
     <property name="vijava.jar" value="lib/vijava/vijava5120121125.jar"/>
 	<property name="javax.xml.bind.jar" value="lib/javax_xml_bind/javax.xml.bind.jar"/>
     <property name="lib.dir" value="lib"/>
+    <property name="version" value="2.2"/>
     <path id="cp">
         <pathelement location="${machine.agent.jar}"/>
         <pathelement location="${log.jar}"/>
@@ -35,7 +36,7 @@
         <delete dir="${build.dir}/classes"/>
     </target>
     <target name="package" depends="build">
-        <zip destfile="${build.dir}/VMWareMonitor.zip">
+        <zip destfile="${build.dir}/VMWareMonitor-${version}.zip">
             <zipfileset dir="${build.dir}/VMWareMonitor" filemode="755" prefix="VMWareMonitor/"/>
         </zip>
         <delete dir="${build.dir}/VMWareMonitor"/>
