@@ -1,290 +1,281 @@
-package com.appdynamics.monitors.vmware;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import com.vmware.vim25.mo.*;
-import com.vmware.vim25.ws.WSClient;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+package com.appdynamics.monitors.VMWare;
 
 import com.singularity.ee.agent.systemagent.api.AManagedMonitor;
 import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import com.singularity.ee.agent.systemagent.api.TaskExecutionContext;
 import com.singularity.ee.agent.systemagent.api.TaskOutput;
 import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
+import com.vmware.vim25.HostListSummaryQuickStats;
 import com.vmware.vim25.VirtualMachineQuickStats;
+import com.vmware.vim25.mo.Folder;
+import com.vmware.vim25.mo.HostSystem;
+import com.vmware.vim25.mo.InventoryNavigator;
+import com.vmware.vim25.mo.ManagedEntity;
+import com.vmware.vim25.mo.ServiceInstance;
+import com.vmware.vim25.mo.VirtualMachine;
+import org.apache.log4j.Logger;
 
-public class VMWareMonitor extends AManagedMonitor
-{
-	/**
-	 * The metric can be found in Application Infrastructure Performance|{@literal <}Node{@literal >}|Custom Metrics|vmware|Status
-	 */
-	public static String metricPrefix = "Custom Metrics|vmware|Status|VM Name|";
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-	private ServiceInstance serviceInstance;
-	protected volatile String host;
-	protected volatile List<String> vmnames;
-	protected volatile String username;
-	protected volatile String password;
-    private ServerConnection serverConnection = null;
-    private boolean stopTask = false;
-    public static final String ONE = "1";
-
-	protected final Logger logger = Logger.getLogger(this.getClass().getName());
+public class VMWareMonitor extends AManagedMonitor {
+    /**
+     * The metric can be found in Application Infrastructure Performance|{@literal <}Node{@literal >}|Custom Metrics|vmware|Status
+     */
+    public static String metricPrefix = "Custom Metrics|vmware|Status|";
+    private static final String ONE = "1";
+    private static final Logger logger = Logger.getLogger(VMWareMonitor.class);
 
     public VMWareMonitor() {
-        logger.setLevel(Level.INFO);
+        String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
+        logger.info(msg);
+        System.out.println(msg);
     }
 
+    private static String getImplementationVersion() {
+        return VMWareMonitor.class.getPackage().getImplementationTitle();
+    }
+
+
     /**
-	 * Fetches statistics from VSphere and uploads them to the controller
-	 * @throws Exception
-	 */
-	public void populate() throws Exception
-	{
-        Folder root = serviceInstance.getRootFolder();
+     * Fetches virtual machine statistics from VSphere
+     *
+     * @param root    root folder
+     * @param vmNames vm names
+     * @throws RemoteException
+     */
+    private Map<String, Number> populateVMMetrics(Folder root, List<String> vmNames) throws RemoteException {
+        Map<String, Number> vmMetrics = new HashMap<String, Number>();
+        if (vmNames == null || vmNames.size() <= 0) {
+            logger.info("Please configure vmnames to get VM metrics");
+            return vmMetrics;
+        }
         List<ManagedEntity> managedEntities = new ArrayList<ManagedEntity>();
         // Get all VMs
-        if (vmnames.size() == 1 && vmnames.get(0).equals("*")) {
+        if (vmNames.size() == 1 && vmNames.get(0).equals("*")) {
             managedEntities = Arrays.asList(new InventoryNavigator(root).searchManagedEntities("VirtualMachine"));
         }
         // Get specific VMs
         else {
-            for (String vmname : vmnames) {
-                managedEntities.add(new InventoryNavigator(root).searchManagedEntity("VirtualMachine", vmname));
+            for (String vmName : vmNames) {
+                managedEntities.add(new InventoryNavigator(root).searchManagedEntity("VirtualMachine", vmName));
             }
         }
-        for (ManagedEntity managedEntity: managedEntities) {
-            if (managedEntity == null || !(managedEntity instanceof VirtualMachine)) {
-                throw new Exception("Could not find VM");
-            }
-            VirtualMachineQuickStats vmStats = ((VirtualMachine)managedEntity).getSummary().getQuickStats();
+        for (ManagedEntity managedEntity : managedEntities) {
 
-            printMetric(managedEntity.getName() + "|Ballooned Memory", vmStats.balloonedMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Compressed Memory", vmStats.compressedMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Overhead Memory Consumed", vmStats.consumedOverheadMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Distributed CPU Entitlement", vmStats.distributedCpuEntitlement,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Distributed Memory Entitlement", vmStats.distributedMemoryEntitlement,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Guest Memory Usage", vmStats.guestMemoryUsage,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Host Memory Usage", vmStats.hostMemoryUsage,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Overall CPU Usage", vmStats.overallCpuUsage,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Overall CPU Demand", vmStats.overallCpuDemand,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Private Memory", vmStats.privateMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Shared Memory", vmStats.sharedMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Static CPU Entitlement", vmStats.staticCpuEntitlement,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Static Memory Entitlement", vmStats.staticMemoryEntitlement,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Swapped Memory", vmStats.swappedMemory,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
-            );
-            printMetric(managedEntity.getName() + "|Up Time", vmStats.uptimeSeconds,
-                    MetricWriter.METRIC_AGGREGATION_TYPE_OBSERVATION,
-                    MetricWriter.METRIC_TIME_ROLLUP_TYPE_CURRENT,
-                    MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_INDIVIDUAL
-            );
+            if (managedEntity == null) {
+                logger.info("Could not find VM");
+                continue;
+            }
+            VirtualMachineQuickStats vmStats = ((VirtualMachine) managedEntity).getSummary().getQuickStats();
+
+            String baseMetricName = "VirtualMachine" + "|" + managedEntity.getName();
+            vmMetrics.put(baseMetricName + "|Ballooned Memory", vmStats.getBalloonedMemory());
+            vmMetrics.put(baseMetricName + "|Compressed Memory", vmStats.getCompressedMemory());
+            vmMetrics.put(baseMetricName + "|Overhead Memory Consumed", vmStats.getConsumedOverheadMemory());
+            vmMetrics.put(baseMetricName + "|Distributed CPU Entitlement", vmStats.getDistributedCpuEntitlement());
+            vmMetrics.put(baseMetricName + "|Distributed Memory Entitlement", vmStats.getDistributedMemoryEntitlement());
+            vmMetrics.put(baseMetricName + "|Guest Memory Usage", vmStats.getGuestMemoryUsage());
+            vmMetrics.put(baseMetricName + "|Host Memory Usage", vmStats.getHostMemoryUsage());
+            vmMetrics.put(baseMetricName + "|Overall CPU Usage", vmStats.getOverallCpuUsage());
+            vmMetrics.put(baseMetricName + "|Overall CPU Demand", vmStats.getOverallCpuDemand());
+            vmMetrics.put(baseMetricName + "|Private Memory", vmStats.getPrivateMemory());
+            vmMetrics.put(baseMetricName + "|Shared Memory", vmStats.getSharedMemory());
+            vmMetrics.put(baseMetricName + "|Static CPU Entitlement", vmStats.getStaticCpuEntitlement());
+            vmMetrics.put(baseMetricName + "|Static Memory Entitlement", vmStats.getStaticMemoryEntitlement());
+            vmMetrics.put(baseMetricName + "|Swapped Memory", vmStats.getSwappedMemory());
+            vmMetrics.put(baseMetricName + "|Up Time", vmStats.getUptimeSeconds());
         }
-        logger.info("Printed metrics successfully...");
-	}
+        return vmMetrics;
+    }
 
-	/**
-	 * Creates an active connection to VSphere Manager
-	 * @throws MalformedURLException
-	 * @throws RemoteException 
-	 */
-	public void connect() throws Exception
-	{
-		String url = "https://" + host + "/sdk";
-        try {
-            serviceInstance = new ServiceInstance(new URL(url), username, password, true);
-            WSClient wsc = serviceInstance.getServerConnection().getVimService().getWsc();
-            wsc.setConnectTimeout(30*1000);
-            wsc.setReadTimeout(10*1000);
-            serverConnection = serviceInstance.getServerConnection();
-            logger.info("Connection to: " + url + " Successful");
+    /**
+     * Fetches host statistics from VSphere
+     *
+     * @param root      root folder
+     * @param hostNames host names
+     * @throws RemoteException
+     */
+    private Map<String, Number> populateHostMetrics(Folder root, List<String> hostNames) throws RemoteException {
+        Map<String, Number> hostMetrics = new HashMap<String, Number>();
+        if (hostNames == null || hostNames.size() <= 0) {
+            logger.info("Please configure hostnames to get host metrics");
+            return hostMetrics;
         }
-        catch (Exception e) {
-            throw e;
+        List<ManagedEntity> managedEntities = new ArrayList<ManagedEntity>();
+        // Get all VMs
+        if (hostNames.size() == 1 && hostNames.get(0).equals("*")) {
+            managedEntities = Arrays.asList(new InventoryNavigator(root).searchManagedEntities("HostSystem"));
         }
-	}
-
-	/**
-	 * Closes the active connection to VSphere
-	 */
-	private void close()
-	{
-		if (serviceInstance == null)
-		{
-			return;
-		}
-		serverConnection.logout();
-		logger.info("Connection closed");
-	}
-
-	/**
-	 * Main execution of the Monitor
-	 * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
-	 */
-	public TaskOutput execute(Map<String, String> arg0, TaskExecutionContext arg1) throws TaskExecutionException
-	{
-        if (!stopTask) {
-            try
-            {
-                host = arg0.get("host");
-                username = arg0.get("username");
-                password = arg0.get("password");
-
-                String[] splittingNames = arg0.get("vmnames").split(",");
-                for (int i = 0; i < splittingNames.length; i++) {
-                    splittingNames[i] = splittingNames[i].replaceAll("\\s","");
-                }
-                vmnames = Arrays.asList(splittingNames);
-
-                connect();
-                populate();
-                close();
-                logger.info("Finished execution");
-                return new TaskOutput("Finished execution");
-            }
-            catch (NullPointerException npe)
-            {
-                logger.error("NullPointerException: ", npe);
-                stopTask = true;
-                return new TaskOutput("Failed with error: " + npe);
-            }
-            catch (MalformedURLException mue)
-            {
-                logger.error("MalformedURLException: ", mue);
-                return new TaskOutput("Failed with error: " + mue);
-            }
-            catch (RemoteException re)
-            {
-                logger.error("RemoteException: ", re);
-                stopTask = true;
-                return new TaskOutput("Failed with error: " + re);
-            }
-            catch (Exception e)
-            {
-                logger.error("Exception: ", e);
-                return new TaskOutput("Failed with error: " + e);
-            }
-        }
+        // Get specific VMs
         else {
-            logger.info("Task has been stopped because of errors!");
-            return new TaskOutput("Task stopped");
+            for (String hostName : hostNames) {
+                managedEntities.add(new InventoryNavigator(root).searchManagedEntity("HostSystem", hostName));
+            }
         }
-	}
+        for (ManagedEntity managedEntity : managedEntities) {
 
-	/**
-	 * Returns the metric to the AppDynamics Controller.
-	 * @param 	metricName		Name of the Metric
-	 * @param 	metricValue		Value of the Metric
-	 * @param 	aggregation		Average OR Observation OR Sum
-	 * @param 	timeRollup		Average OR Current OR Sum
-	 * @param 	cluster			Collective OR Individual
-	 */
-	public void printMetric(String metricName, Object metricValue, String aggregation, String timeRollup, String cluster)
-	{
-		MetricWriter metricWriter = getMetricWriter(getMetricPrefix() + metricName, 
-			aggregation,
-			timeRollup,
-			cluster
-		);
+            if (managedEntity == null) {
+                logger.info("Could not find host");
+                continue;
+            }
+            HostListSummaryQuickStats hostStats = ((HostSystem) managedEntity).getSummary().getQuickStats();
 
-        if(logger.isDebugEnabled()){
-            logger.debug("Metric key:value before ceiling = "+ metricName + ":" + String.valueOf(metricValue));
+
+            String baseMetricName = "HostSystem" + "|" + managedEntity.getName();
+            hostMetrics.put(baseMetricName + "|Distributed CPU Fairness", hostStats.getDistributedCpuFairness());
+
+            hostMetrics.put(baseMetricName + "|Distributed Memory Fairness", hostStats.getDistributedMemoryFairness());
+
+            hostMetrics.put(baseMetricName + "|Overall CPU Usage", hostStats.getOverallCpuUsage());
+            hostMetrics.put(baseMetricName + "|Overall Memory Usage", hostStats.getOverallMemoryUsage());
+            hostMetrics.put(baseMetricName + "|Up Time", hostStats.getUptime());
         }
-		metricWriter.printMetric(toWholeNumberString(metricValue));
-	}
+        return hostMetrics;
+    }
+
+    /**
+     * Creates an active connection to VSphere Manager
+     *
+     * @param host         host
+     * @param username     username
+     * @param password     password
+     * @param vmNames      vm names
+     * @param hostNames    host names
+     * @param metricPrefix metric prefix
+     * @throws TaskExecutionException
+     */
+    private void connectAndFetchStats(String host, String username, String password, List<String> vmNames, List<String> hostNames, String metricPrefix) throws TaskExecutionException {
+        String url = "https://" + host + "/sdk";
+        try {
+            ServiceInstance serviceInstance = new ServiceInstance(new URL(url), username, password, true);
+            Folder rootFolder = serviceInstance.getRootFolder();
+            logger.info("Connection to: " + url + " Successful");
+
+            Map<String, Number> vmStats = populateVMMetrics(rootFolder, vmNames);
+            printStats(vmStats, metricPrefix);
+
+            Map<String, Number> hostStats = populateHostMetrics(rootFolder, hostNames);
+            printStats(hostStats, metricPrefix);
+
+            close(serviceInstance);
+        } catch (Exception e) {
+            logger.error("Unable to connect to the host [" + host + "]", e);
+            throw new TaskExecutionException("Unable to connect to the host [" + host + "]", e);
+        }
+    }
+
+    private void printStats(Map<String, Number> stats, String metricPrefix) {
+        if (stats == null) {
+            return;
+        }
+
+        for (Map.Entry<String, Number> stat : stats.entrySet()) {
+            printMetric(metricPrefix + stat.getKey(), stat.getValue());
+        }
+    }
+
+    /**
+     * Closes the active connection to VSphere
+     *
+     * @param serviceInstance service instance
+     */
+    private void close(ServiceInstance serviceInstance) {
+        if (serviceInstance != null) {
+            serviceInstance.getServerConnection().logout();
+            logger.info("Connection closed");
+        }
+    }
+
+    /**
+     * Main execution of the Monitor
+     *
+     * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
+     */
+    public TaskOutput execute(Map<String, String> taskArguments, TaskExecutionContext taskExecutionContext) throws TaskExecutionException {
+        try {
+            String host = taskArguments.get("host");
+            String username = taskArguments.get("username");
+            String password = taskArguments.get("password");
+
+            String metricPrefix = taskArguments.get("metricPrefix");
+            if (metricPrefix == null || metricPrefix.length() <= 0) {
+                metricPrefix = VMWareMonitor.metricPrefix;
+            }
+
+            List<String> vmNames = getNamedArgument(taskArguments, "vmnames");
+            List<String> hostNames = getNamedArgument(taskArguments, "hostnames");
+
+            connectAndFetchStats(host, username, password, vmNames, hostNames, metricPrefix);
+            logger.info("Finished execution");
+            return new TaskOutput("Finished execution");
+        } catch (Exception e) {
+            logger.error("Failed tp execute the VMWare monitoring task", e);
+            throw new TaskExecutionException("Failed tp execute the VMWare monitoring task" + e);
+        }
+
+    }
+
+    private List<String> getNamedArgument(Map<String, String> taskArguments, String name) {
+        String namedArguments = taskArguments.get(name);
+        String[] splittingNames = namedArguments.split(",");
+        for (int i = 0; i < splittingNames.length; i++) {
+            splittingNames[i] = splittingNames[i].replaceAll("\\s", "");
+        }
+        return Arrays.asList(splittingNames);
+    }
+
+    /**
+     * Returns the metric to the AppDynamics Controller.
+     *
+     * @param metricName  Name of the Metric
+     * @param metricValue Value of the Metric
+     */
+    public void printMetric(String metricName, Object metricValue) {
+
+        if (metricValue == null) {
+            logger.info("Ignoring metric [" + metricName + "] as it has null value");
+            return;
+        }
+
+        MetricWriter metricWriter = getMetricWriter(metricName,
+                MetricWriter.METRIC_AGGREGATION_TYPE_OBSERVATION,
+                MetricWriter.METRIC_TIME_ROLLUP_TYPE_CURRENT,
+                MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_INDIVIDUAL
+        );
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Metric key:value before ceiling = " + metricName + ":" + String.valueOf(metricValue));
+        }
+        metricWriter.printMetric(toWholeNumberString(metricValue));
+    }
 
     /**
      * Currently, appD controller only supports Integer values. This function will round all the decimals into integers and convert them into strings.
      * If number is less than 0.5, Math.round will round it to 0 which is not useful on the controller.
-     * @param attribute
-     * @return
+     *
+     * @param attribute value before rounding
+     * @return rounded value
      */
-    public static String toWholeNumberString(Object attribute) {
-        if(attribute instanceof Double){
+    private static String toWholeNumberString(Object attribute) {
+        if (attribute instanceof Double) {
             Double d = (Double) attribute;
-            if(d > 0 && d < 1.0d){
+            if (d > 0 && d < 1.0d) {
                 return ONE;
             }
             return String.valueOf(Math.round(d));
-        }
-        else if(attribute instanceof Float){
+        } else if (attribute instanceof Float) {
             Float f = (Float) attribute;
-            if(f > 0 && f < 1.0f){
+            if (f > 0 && f < 1.0f) {
                 return ONE;
             }
             return String.valueOf(Math.round((Float) attribute));
         }
         return attribute.toString();
     }
-
-
-    /**
-	 * @return Returns the metric path
-	 */
-	public String getMetricPrefix()
-	{
-		return VMWareMonitor.metricPrefix;
-	}
 }
