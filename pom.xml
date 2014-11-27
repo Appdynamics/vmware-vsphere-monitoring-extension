@@ -111,7 +111,7 @@
                         <phase>install</phase>
                         <configuration>
                             <target>
-                                <property name="target.dir" value="${build.directory}/VsphereMonitor"/>
+                                <property name="target.dir" value="${build.directory}/VMWareMonitor"/>
                                 <mkdir dir="${target.dir}"/>
                                 <copy todir="${target.dir}">
                                     <fileset dir="src/main/resources/config" includes="monitor.xml"/>
@@ -121,7 +121,7 @@
                                     <fileset dir="${build.directory}" includes="${project.artifactId}.${project.packaging}"/>
                                 </copy>
                                 <zip destfile="${target.dir}.zip">
-                                    <zipfileset dir="${target.dir}" filemode="755" prefix="VsphereMonitor/"/>
+                                    <zipfileset dir="${target.dir}" filemode="755" prefix="VMWareMonitor/"/>
                                 </zip>
                                 <delete dir="${target.dir}"/>
                             </target>
