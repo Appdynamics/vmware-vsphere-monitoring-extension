@@ -8,6 +8,7 @@ VMware vSphere ([www.vmware.com](http://www.vmware.com/products/datacenter-virtu
 
 Metrics include:
 
+####VM Metrics
 * Ballooned Memory
 * Compressed Memory
 * Overhead Memory Consumed
@@ -21,33 +22,40 @@ Metrics include:
 * Swapped Memory
 * Uptime
 
+####Host Metrics
+* Distributed CPU Fairness
+* Distributed Memory Fairness
+* Overall CPU Usage
+* Overall Memory Usage
+* Up Time
 
 ##Installation
 
-1. Run 'ant package' from the vmware-vsphere-monitoring-extension directory
+1. Run 'mvn clean install' from the vmware-vsphere-monitoring-extension directory
 2. Deploy the file VMWareMonitor.zip found in the 'dist' directory into \<machineagent install dir\>/monitors/
 3. Unzip the deployed file
 4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials). Note: The host can be specified with or without a specific port. For instance, if no port is specified, port 80 will be used (i.e. argument name="host" is-required="true" default-value="hostname:" ). On the other hand, if there is specific port then it needs to be appended to the host in the monitor.xml (i.e.argument name="host" is-required="true" default-value="hostname:port")
-5. Also, the vmnames argument needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs associated with the host will be fetched. If a comma separated list of vmnames is provided, then only those VMs wil be fetched. (see monitor.xml for examples)
+5. Also, the vmnames and hostnames arguments needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs/Hosts associated with the host will be fetched. If a comma separated list of values is provided, then only those VMs/Hosts wil be fetched. (see monitor.xml for examples)
 6. Restart the machineagent
-7. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status | VMName
+7. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
 
 
 ##Directory Structure
 
 | File/Folder | Description |
 | --- | --- |
-| conf | Contains the monitor.xml |
-| lib | Contains third-party project references |
-| src | Contains source code to the VMWare Monitoring Extension |
-| dist | Only obtained when using ant. Run 'ant build' to get binaries. Run 'ant package' to get the distributable .zip file |
-| build.xml | Ant build script to package the project (only required if changing java code) |
-| Main Java File | src/main/java/com/appdynamics/monitors/vmware/VMWareMonitor.java
+| src/main/resources/config | Contains the monitor.xml |
+| src/main/java | Contains source code to the VMWare Monitoring Extension |
+| target | Only obtained when using maven. Run 'maven clean install' to get the distributable .zip file |
+| pom.xml | Maven build script to package the project (only required if changing java code) |
+| Main Java File | src/main/java/com/appdynamics/monitors/VMWare/VMWareMonitor.java
 
 
 ##Metrics
 
-Metric | Description |
+###VM Metrics
+
+| Metric | Description |
 | --- | --- |
 | Ballooned Memory | The size of the balloon driver in the VM, in MB. The host will inflate the balloon driver to reclaim physical memory from the VM. This is a sign that there is memory pressure on the host. |
 | Compressed Memory | The amount of compressed memory currently consumed by VM, in Kb. |
@@ -65,6 +73,14 @@ Metric | Description |
 | Swapped Memory | The portion of memory, in MB, that is granted to this VM from the host's swap space. This is a sign that there is memory pressure on the host.  |
 | Uptime | The system uptime of the VM in seconds. |
 
+###Host Metrics
+| Metric | Description |
+| --- | --- |
+| Distributed CPU Fairness | The fairness of distributed CPU resource allocation on the host |
+| Distributed Memory Fairness | The fairness of distributed memory resource allocation on the host |
+| Overall CPU Usage | Aggregated CPU usage across all cores on the host in MHz. This is only available if the host is connected |
+| Overall Memory Usage | Physical memory usage on the host in MB. This is only available if the host is connected |
+| Up Time | The system uptime of the host in seconds.  |
 
 
 ##Contributing
