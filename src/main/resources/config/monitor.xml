@@ -12,20 +12,7 @@
                 <type>java</type>
                 <execution-timeout-in-secs>60</execution-timeout-in-secs>
                 <task-arguments>
-                        <!-- By default the port is 80 for the host. If there is a specific port that is being used then append it to the host-->
-                            <!-- Case 1, default port  : default-value="hostname"-->
-                            <!-- Case 2, specific port : default-value="hostname:1234"-->
-
-                        <argument name="host" is-required="true" default-value="" />
-                        <argument name="username" is-required="true" default-value="" />
-                        <argument name="password" is-required="true" default-value="" />
-                        <argument name="metricPrefix" is-required="true" default-value="Custom Metrics|vmware|Status|" />
-
-                        <!-- There two ways to specify this value: "*" or "name1,name2,..."-->
-                        <!-- "*" means that all VMs/Hosts associated with the host will be fetched-->
-                        <!-- a comma seprated list of names (i.e. "name1, ...") means that only those vms/hosts associated with the host will be fetched-->
-                        <argument name="vmnames" is-required="true" default-value="*"/>
-                        <argument name="hostnames" is-required="true" default-value="*"/>
+                        <argument name="config-file" is-required="true" default-value="monitors/VMWareMonitor/config.yml" />
                 </task-arguments>
                 <java-task>
                     <classpath>vsphere-monitoring-extension.jar</classpath>

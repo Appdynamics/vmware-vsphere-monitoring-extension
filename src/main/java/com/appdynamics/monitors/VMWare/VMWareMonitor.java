@@ -1,11 +1,23 @@
 package com.appdynamics.monitors.VMWare;
 
+import com.appdynamics.TaskInputArgs;
+import com.appdynamics.extensions.PathResolver;
+import com.appdynamics.extensions.crypto.CryptoUtil;
+import com.appdynamics.monitors.VMWare.config.Configuration;
+import com.appdynamics.monitors.VMWare.config.HostConfig;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.singularity.ee.agent.systemagent.api.AManagedMonitor;
 import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import com.singularity.ee.agent.systemagent.api.TaskExecutionContext;
 import com.singularity.ee.agent.systemagent.api.TaskOutput;
 import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
+import com.vmware.vim25.HostHardwareInfo;
 import com.vmware.vim25.HostListSummaryQuickStats;
+import com.vmware.vim25.InvalidProperty;
+import com.vmware.vim25.RuntimeFault;
+import com.vmware.vim25.VirtualHardware;
 import com.vmware.vim25.VirtualMachineQuickStats;
 import com.vmware.vim25.mo.Folder;
 import com.vmware.vim25.mo.HostSystem;
@@ -15,6 +27,7 @@ import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.mo.VirtualMachine;
 import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -23,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.appdynamics.extensions.yml.YmlReader.readFromFile;
+
 public class VMWareMonitor extends AManagedMonitor {
     /**
      * The metric can be found in Application Infrastructure Performance|{@literal <}Node{@literal >}|Custom Metrics|vmware|Status
@@ -30,6 +45,9 @@ public class VMWareMonitor extends AManagedMonitor {
     public static String metricPrefix = "Custom Metrics|vmware|Status|";
     private static final String ONE = "1";
     private static final Logger logger = Logger.getLogger(VMWareMonitor.class);
+
+    private static final String CONFIG_ARG = "config-file";
+    private static final String FILE_NAME = "monitors/VMWareMonitor/config.yml";
 
     public VMWareMonitor() {
         String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
@@ -41,102 +59,36 @@ public class VMWareMonitor extends AManagedMonitor {
         return VMWareMonitor.class.getPackage().getImplementationTitle();
     }
 
-
     /**
-     * Fetches virtual machine statistics from VSphere
+     * Main execution of the Monitor
      *
-     * @param root    root folder
-     * @param vmNames vm names
-     * @throws RemoteException
+     * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
      */
-    private Map<String, Number> populateVMMetrics(Folder root, List<String> vmNames) throws RemoteException {
-        Map<String, Number> vmMetrics = new HashMap<String, Number>();
-        if (vmNames == null || vmNames.size() <= 0) {
-            logger.info("Please configure vmnames to get VM metrics");
-            return vmMetrics;
-        }
-        List<ManagedEntity> managedEntities = new ArrayList<ManagedEntity>();
-        // Get all VMs
-        if (vmNames.size() == 1 && vmNames.get(0).equals("*")) {
-            managedEntities = Arrays.asList(new InventoryNavigator(root).searchManagedEntities("VirtualMachine"));
-        }
-        // Get specific VMs
-        else {
-            for (String vmName : vmNames) {
-                managedEntities.add(new InventoryNavigator(root).searchManagedEntity("VirtualMachine", vmName));
+    public TaskOutput execute(Map<String, String> taskArguments, TaskExecutionContext taskExecutionContext) throws TaskExecutionException {
+        try {
+
+            logger.info("Starting the VMWare Monitoring task.");
+            String configFilename = getConfigFilename(taskArguments.get(CONFIG_ARG));
+            Configuration config = readFromFile(configFilename, Configuration.class);
+            String host = config.getHost();
+            String username = config.getUsername();
+            String password = getPassword(config);
+
+            String metricPrefix = config.getMetricPrefix();
+            if (Strings.isNullOrEmpty(metricPrefix)) {
+                metricPrefix = VMWareMonitor.metricPrefix;
             }
-        }
-        for (ManagedEntity managedEntity : managedEntities) {
 
-            if (managedEntity == null) {
-                logger.info("Could not find VM");
-                continue;
+            List<HostConfig> hostConfigs = config.getHostConfig();
+            if (hostConfigs != null && !hostConfigs.isEmpty()) {
+                connectAndFetchStats(host, username, password, hostConfigs, metricPrefix);
             }
-            VirtualMachineQuickStats vmStats = ((VirtualMachine) managedEntity).getSummary().getQuickStats();
-
-            String baseMetricName = "VirtualMachine" + "|" + managedEntity.getName();
-            vmMetrics.put(baseMetricName + "|Ballooned Memory", vmStats.getBalloonedMemory());
-            vmMetrics.put(baseMetricName + "|Compressed Memory", vmStats.getCompressedMemory());
-            vmMetrics.put(baseMetricName + "|Overhead Memory Consumed", vmStats.getConsumedOverheadMemory());
-            vmMetrics.put(baseMetricName + "|Distributed CPU Entitlement", vmStats.getDistributedCpuEntitlement());
-            vmMetrics.put(baseMetricName + "|Distributed Memory Entitlement", vmStats.getDistributedMemoryEntitlement());
-            vmMetrics.put(baseMetricName + "|Guest Memory Usage", vmStats.getGuestMemoryUsage());
-            vmMetrics.put(baseMetricName + "|Host Memory Usage", vmStats.getHostMemoryUsage());
-            vmMetrics.put(baseMetricName + "|Overall CPU Usage", vmStats.getOverallCpuUsage());
-            vmMetrics.put(baseMetricName + "|Overall CPU Demand", vmStats.getOverallCpuDemand());
-            vmMetrics.put(baseMetricName + "|Private Memory", vmStats.getPrivateMemory());
-            vmMetrics.put(baseMetricName + "|Shared Memory", vmStats.getSharedMemory());
-            vmMetrics.put(baseMetricName + "|Static CPU Entitlement", vmStats.getStaticCpuEntitlement());
-            vmMetrics.put(baseMetricName + "|Static Memory Entitlement", vmStats.getStaticMemoryEntitlement());
-            vmMetrics.put(baseMetricName + "|Swapped Memory", vmStats.getSwappedMemory());
-            vmMetrics.put(baseMetricName + "|Up Time", vmStats.getUptimeSeconds());
+            logger.info("Finished execution");
+            return new TaskOutput("Finished execution");
+        } catch (Exception e) {
+            logger.error("Failed tp execute the VMWare monitoring task", e);
+            throw new TaskExecutionException("Failed tp execute the VMWare monitoring task" + e);
         }
-        return vmMetrics;
-    }
-
-    /**
-     * Fetches host statistics from VSphere
-     *
-     * @param root      root folder
-     * @param hostNames host names
-     * @throws RemoteException
-     */
-    private Map<String, Number> populateHostMetrics(Folder root, List<String> hostNames) throws RemoteException {
-        Map<String, Number> hostMetrics = new HashMap<String, Number>();
-        if (hostNames == null || hostNames.size() <= 0) {
-            logger.info("Please configure hostnames to get host metrics");
-            return hostMetrics;
-        }
-        List<ManagedEntity> managedEntities = new ArrayList<ManagedEntity>();
-        // Get all VMs
-        if (hostNames.size() == 1 && hostNames.get(0).equals("*")) {
-            managedEntities = Arrays.asList(new InventoryNavigator(root).searchManagedEntities("HostSystem"));
-        }
-        // Get specific VMs
-        else {
-            for (String hostName : hostNames) {
-                managedEntities.add(new InventoryNavigator(root).searchManagedEntity("HostSystem", hostName));
-            }
-        }
-        for (ManagedEntity managedEntity : managedEntities) {
-
-            if (managedEntity == null) {
-                logger.info("Could not find host");
-                continue;
-            }
-            HostListSummaryQuickStats hostStats = ((HostSystem) managedEntity).getSummary().getQuickStats();
-
-
-            String baseMetricName = "HostSystem" + "|" + managedEntity.getName();
-            hostMetrics.put(baseMetricName + "|Distributed CPU Fairness", hostStats.getDistributedCpuFairness());
-
-            hostMetrics.put(baseMetricName + "|Distributed Memory Fairness", hostStats.getDistributedMemoryFairness());
-
-            hostMetrics.put(baseMetricName + "|Overall CPU Usage", hostStats.getOverallCpuUsage());
-            hostMetrics.put(baseMetricName + "|Overall Memory Usage", hostStats.getOverallMemoryUsage());
-            hostMetrics.put(baseMetricName + "|Up Time", hostStats.getUptime());
-        }
-        return hostMetrics;
     }
 
     /**
@@ -145,29 +97,162 @@ public class VMWareMonitor extends AManagedMonitor {
      * @param host         host
      * @param username     username
      * @param password     password
-     * @param vmNames      vm names
-     * @param hostNames    host names
+     * @param hostConfigs  host config
      * @param metricPrefix metric prefix
      * @throws TaskExecutionException
      */
-    private void connectAndFetchStats(String host, String username, String password, List<String> vmNames, List<String> hostNames, String metricPrefix) throws TaskExecutionException {
+    private void connectAndFetchStats(String host, String username, String password, List<HostConfig> hostConfigs, String metricPrefix) throws TaskExecutionException {
         String url = "https://" + host + "/sdk";
         try {
             ServiceInstance serviceInstance = new ServiceInstance(new URL(url), username, password, true);
             Folder rootFolder = serviceInstance.getRootFolder();
             logger.info("Connection to: " + url + " Successful");
 
-            Map<String, Number> vmStats = populateVMMetrics(rootFolder, vmNames);
-            printStats(vmStats, metricPrefix);
-
-            Map<String, Number> hostStats = populateHostMetrics(rootFolder, hostNames);
-            printStats(hostStats, metricPrefix);
+            populateMetrics(rootFolder, hostConfigs, metricPrefix);
 
             close(serviceInstance);
         } catch (Exception e) {
             logger.error("Unable to connect to the host [" + host + "]", e);
             throw new TaskExecutionException("Unable to connect to the host [" + host + "]", e);
         }
+    }
+
+    private void populateMetrics(Folder rootFolder, List<HostConfig> hostConfigs, String metricPrefix) {
+
+        List<ManagedEntity> hostEntities = getHostMachines(rootFolder, hostConfigs);
+
+        for (ManagedEntity hostEntity : hostEntities) {
+            Map<String, Number> metrics = populateHostAndVMMetrics(hostEntity, hostConfigs);
+            printStats(metrics, metricPrefix);
+        }
+    }
+
+    private List<ManagedEntity> getHostMachines(Folder rootFolder, List<HostConfig> hostConfigs) {
+        List<ManagedEntity> hostEntities = new ArrayList<ManagedEntity>();
+
+        for (HostConfig hostConfig : hostConfigs) {
+            String hostName = hostConfig.getHost();
+            try {
+                if ("*".equals(hostName)) {
+                    hostEntities = Arrays.asList(new InventoryNavigator(rootFolder).searchManagedEntities("HostSystem"));
+                } else {
+                    ManagedEntity hostSystem = new InventoryNavigator(rootFolder).searchManagedEntity("HostSystem", hostName);
+                    if (hostSystem != null) {
+                        hostEntities.add(hostSystem);
+                    } else {
+                        logger.error("Could not find Host with name " + hostName);
+                    }
+                }
+            } catch (InvalidProperty invalidProperty) {
+                logger.error("Unable to get the host details", invalidProperty);
+            } catch (RuntimeFault runtimeFault) {
+                logger.error("Unable to get the host details", runtimeFault);
+            } catch (RemoteException e) {
+                logger.error("Unable to get the host details", e);
+            }
+        }
+        return hostEntities;
+    }
+
+    /**
+     * Fetches virtual machine statistics from VSphere
+     *
+     * @param virtualMachine virtual machine
+     * @param baseMetricPath base metric path
+     * @param hostMetrics    host metrics
+     */
+    private void populateVMMetrics(VirtualMachine virtualMachine, String baseMetricPath, Map<String, Number> hostMetrics) {
+
+        VirtualMachineQuickStats vmStats = virtualMachine.getSummary().getQuickStats();
+
+        String baseMetricName = baseMetricPath + "|" + "VirtualMachine" + "|" + virtualMachine.getName();
+        hostMetrics.put(baseMetricName + "|Ballooned Memory", vmStats.getBalloonedMemory());
+        hostMetrics.put(baseMetricName + "|Compressed Memory", vmStats.getCompressedMemory());
+        hostMetrics.put(baseMetricName + "|Overhead Memory Consumed", vmStats.getConsumedOverheadMemory());
+        hostMetrics.put(baseMetricName + "|Distributed CPU Entitlement", vmStats.getDistributedCpuEntitlement());
+        hostMetrics.put(baseMetricName + "|Distributed Memory Entitlement", vmStats.getDistributedMemoryEntitlement());
+        hostMetrics.put(baseMetricName + "|Guest Memory Usage", vmStats.getGuestMemoryUsage());
+        hostMetrics.put(baseMetricName + "|Host Memory Usage", vmStats.getHostMemoryUsage());
+        hostMetrics.put(baseMetricName + "|Overall CPU Usage", vmStats.getOverallCpuUsage());
+        hostMetrics.put(baseMetricName + "|Overall CPU Demand", vmStats.getOverallCpuDemand());
+        hostMetrics.put(baseMetricName + "|Private Memory", vmStats.getPrivateMemory());
+        hostMetrics.put(baseMetricName + "|Shared Memory", vmStats.getSharedMemory());
+        hostMetrics.put(baseMetricName + "|Static CPU Entitlement", vmStats.getStaticCpuEntitlement());
+        hostMetrics.put(baseMetricName + "|Static Memory Entitlement", vmStats.getStaticMemoryEntitlement());
+        hostMetrics.put(baseMetricName + "|Swapped Memory", vmStats.getSwappedMemory());
+        hostMetrics.put(baseMetricName + "|Up Time", vmStats.getUptimeSeconds());
+
+        VirtualHardware hardware = virtualMachine.getConfig().getHardware();
+        hostMetrics.put(baseMetricName + "|Memory MB", hardware.getMemoryMB());
+        hostMetrics.put(baseMetricName + "|Num CPU", hardware.getNumCPU());
+    }
+
+    /**
+     * Fetches host statistics from VSphere
+     *
+     * @param hostEntity host entity
+     */
+    private Map<String, Number> populateHostAndVMMetrics(ManagedEntity hostEntity, List<HostConfig> hostConfigs) {
+        Map<String, Number> hostMetrics = new HashMap<String, Number>();
+
+        HostSystem hostSystem = (HostSystem) hostEntity;
+
+        HostListSummaryQuickStats hostStats = hostSystem.getSummary().getQuickStats();
+
+        String hostName = hostEntity.getName();
+        String baseMetricName = "HostSystem" + "|" + hostName;
+        hostMetrics.put(baseMetricName + "|Distributed CPU Fairness", hostStats.getDistributedCpuFairness());
+
+        hostMetrics.put(baseMetricName + "|Distributed Memory Fairness", hostStats.getDistributedMemoryFairness());
+
+        hostMetrics.put(baseMetricName + "|Overall CPU Usage", hostStats.getOverallCpuUsage());
+        hostMetrics.put(baseMetricName + "|Overall Memory Usage", hostStats.getOverallMemoryUsage());
+        hostMetrics.put(baseMetricName + "|Up Time", hostStats.getUptime());
+
+        HostHardwareInfo hardwareInfo = hostSystem.getHardware();
+        hostMetrics.put(baseMetricName + "|Memory Size", hardwareInfo.getMemorySize());
+        hostMetrics.put(baseMetricName + "|CPU Cores", hardwareInfo.getCpuInfo().getNumCpuCores());
+
+        List<String> vmConfigForHost = getVMConfigForHost(hostName, hostConfigs);
+
+        try {
+            VirtualMachine[] vms = hostSystem.getVms();
+
+
+            if (vms != null && vms.length > 0) {
+
+                for (String vmNameFromConfig : vmConfigForHost) {
+                    boolean foundVM = false;
+
+                    for (VirtualMachine virtualMachine : vms) {
+                        String vmName = virtualMachine.getName();
+
+                        if (vmName.equalsIgnoreCase(vmNameFromConfig) || "*".equals(vmNameFromConfig)) {
+                            populateVMMetrics(virtualMachine, baseMetricName, hostMetrics);
+                            foundVM = true;
+                            continue;
+                        }
+                    }
+
+                    if (!foundVM) {
+                        logger.error("Could not find vm with name " + vmNameFromConfig);
+                    }
+                }
+            }
+        } catch (RemoteException e) {
+            logger.error("Unable to get the VMs", e);
+        }
+
+        return hostMetrics;
+    }
+
+    private List<String> getVMConfigForHost(String hostName, List<HostConfig> hostConfigs) {
+        for (HostConfig hostConfig : hostConfigs) {
+            if (hostName.equalsIgnoreCase(hostConfig.getHost()) || "*".equals(hostConfig.getHost())) {
+                return hostConfig.getVms();
+            }
+        }
+        return Lists.newArrayList();
     }
 
     private void printStats(Map<String, Number> stats, String metricPrefix) {
@@ -192,42 +277,49 @@ public class VMWareMonitor extends AManagedMonitor {
         }
     }
 
-    /**
-     * Main execution of the Monitor
-     *
-     * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
-     */
-    public TaskOutput execute(Map<String, String> taskArguments, TaskExecutionContext taskExecutionContext) throws TaskExecutionException {
-        try {
-            String host = taskArguments.get("host");
-            String username = taskArguments.get("username");
-            String password = taskArguments.get("password");
 
-            String metricPrefix = taskArguments.get("metricPrefix");
-            if (metricPrefix == null || metricPrefix.length() <= 0) {
-                metricPrefix = VMWareMonitor.metricPrefix;
+    private String getPassword(Configuration config) {
+        String password = null;
+
+        if (!Strings.isNullOrEmpty(config.getPassword())) {
+            password = config.getPassword();
+
+        } else {
+            try {
+                Map<String, String> args = Maps.newHashMap();
+                args.put(TaskInputArgs.PASSWORD_ENCRYPTED, config.getEncryptedPassword());
+                args.put(TaskInputArgs.ENCRYPTION_KEY, config.getEncryptionKey());
+                password = CryptoUtil.getPassword(args);
+
+            } catch (IllegalArgumentException e) {
+                String msg = "Encryption Key not specified. Please set the value in config.yaml.";
+                logger.error(msg);
+                throw new IllegalArgumentException(msg);
             }
-
-            List<String> vmNames = getNamedArgument(taskArguments, "vmnames");
-            List<String> hostNames = getNamedArgument(taskArguments, "hostnames");
-
-            connectAndFetchStats(host, username, password, vmNames, hostNames, metricPrefix);
-            logger.info("Finished execution");
-            return new TaskOutput("Finished execution");
-        } catch (Exception e) {
-            logger.error("Failed tp execute the VMWare monitoring task", e);
-            throw new TaskExecutionException("Failed tp execute the VMWare monitoring task" + e);
         }
 
+        return password;
     }
 
-    private List<String> getNamedArgument(Map<String, String> taskArguments, String name) {
-        String namedArguments = taskArguments.get(name);
-        String[] splittingNames = namedArguments.split(",");
-        for (int i = 0; i < splittingNames.length; i++) {
-            splittingNames[i] = splittingNames[i].replaceAll("\\s", "");
+    private String getConfigFilename(String filename) {
+        if (filename == null) {
+            return "";
         }
-        return Arrays.asList(splittingNames);
+
+        if ("".equals(filename)) {
+            filename = FILE_NAME;
+        }
+        // for absolute paths
+        if (new File(filename).exists()) {
+            return filename;
+        }
+        // for relative paths
+        File jarPath = PathResolver.resolveDirectory(AManagedMonitor.class);
+        String configFileName = "";
+        if (!Strings.isNullOrEmpty(filename)) {
+            configFileName = jarPath + File.separator + filename;
+        }
+        return configFileName;
     }
 
     /**
