@@ -21,6 +21,8 @@ Metrics include:
 * Static Memory Entitlement
 * Swapped Memory
 * Uptime
+* Memory MB
+* Num CPU
 
 ####Host Metrics
 * Distributed CPU Fairness
@@ -28,6 +30,8 @@ Metrics include:
 * Overall CPU Usage
 * Overall Memory Usage
 * Up Time
+* Memory Size
+* CPU Cores
 
 ##Installation
 
@@ -72,6 +76,8 @@ Metrics include:
 | Static Memory Entitlement | The static memory resource entitlement for a virtual machine. This value is calculated based on this virtual machine's resource reservations, shares and limit, and doesn't take into account current usage. This is the worst case memory allocation for this virtual machine, that is, the amount of memory this virtual machine would receive if all virtual machines running in the cluster went to maximum consumption. Units are MB. |
 | Swapped Memory | The portion of memory, in MB, that is granted to this VM from the host's swap space. This is a sign that there is memory pressure on the host.  |
 | Uptime | The system uptime of the VM in seconds. |
+| Memory MB | Memory in MB |
+| Num CPU | Number of CPU Cores |
 
 ###Host Metrics
 | Metric | Description |
@@ -81,15 +87,33 @@ Metrics include:
 | Overall CPU Usage | Aggregated CPU usage across all cores on the host in MHz. This is only available if the host is connected |
 | Overall Memory Usage | Physical memory usage on the host in MB. This is only available if the host is connected |
 | Up Time | The system uptime of the host in seconds.  |
+| Memory Size | Memory size of the host machine  |
+| CPU Cores | CPU core sof this host machine  |
+
+
+###Password Encryption
+To set encryptedPassword in config.yaml, follow the steps below:
+
+1. Download the util jar to encrypt the AWS Credentials from [here](https://github.com/Appdynamics/maven-repo/blob/master/releases/com/appdynamics/appd-exts-commons/1.1.2/appd-exts-commons-1.1.2.jar).
+2. Run command:
+
+   	~~~   
+   	java -cp appd-exts-commons-1.1.2.jar com.appdynamics.extensions.crypto.Encryptor EncryptionKey PasswordToEncrypt
+   	
+   	For example: 
+   	java -cp "appd-exts-commons-1.1.2.jar" com.appdynamics.extensions.crypto.Encryptor test mypassword
+   	~~~
+   	
+3. Set encryptedPassword and encryptionKey in the config.yml.
 
 
 ##Contributing
 
-Always feel free to fork and contribute any changes directly via [GitHub](https://github.com/Appdynamics/vmware-vsphere-monitoring-extension).
+Always feel free to fork and contribute any changes directly via GitHub.
 
 ##Community
 
-Find out more in the [AppSphere](http://appsphere.appdynamics.com/t5/Extensions/VMware-vSphere-Monitoring-Extension/idi-p/839) community.
+Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/vmware-vsphere-monitoring-extension/) community.
 
 ##Support
 
