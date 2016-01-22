@@ -230,7 +230,7 @@ public class VMWareMonitor extends AManagedMonitor {
                         if (vmName.equalsIgnoreCase(vmNameFromConfig) || "*".equals(vmNameFromConfig)) {
                             populateVMMetrics(virtualMachine, baseMetricName, hostMetrics);
                             foundVM = true;
-                            continue;
+                            break;
                         }
                     }
 
