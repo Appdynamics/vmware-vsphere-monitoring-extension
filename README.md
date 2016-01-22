@@ -38,8 +38,8 @@ Metrics include:
 1. Run 'mvn clean install' from the vmware-vsphere-monitoring-extension directory
 2. Deploy the file VMWareMonitor.zip found in the 'dist' directory into \<machineagent install dir\>/monitors/
 3. Unzip the deployed file
-4. Open \<machineagent install dir\>/monitors/VMWareMonitor/monitor.xml and update the host (Host of VSphere), username and password (VSphere credentials). Note: The host can be specified with or without a specific port. For instance, if no port is specified, port 80 will be used (i.e. argument name="host" is-required="true" default-value="hostname:" ). On the other hand, if there is specific port then it needs to be appended to the host in the monitor.xml (i.e.argument name="host" is-required="true" default-value="hostname:port")
-5. Also, the vmnames and hostnames arguments needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs/Hosts associated with the host will be fetched. If a comma separated list of values is provided, then only those VMs/Hosts wil be fetched. (see monitor.xml for examples)
+4. Open \<machineagent install dir\>/monitors/VMWareMonitor/config.yml and update the host (Host of VSphere), username and password (VSphere credentials). Note: The host can be specified with or without a specific port. For instance, if no port is specified, port 80 will be used (i.e. argument name="host" is-required="true" default-value="hostname:" ). On the other hand, if there is specific port then it needs to be appended to the host in the monitor.xml (i.e.argument name="host" is-required="true" default-value="hostname:port")
+5. Also in hostConfig, the host and vms arguments needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs/Hosts associated with the host will be fetched. If a comma separated list of values is provided, then only those VMs/Hosts wil be fetched. (see config.yml for examples)
 6. Restart the machineagent
 7. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
 
@@ -48,12 +48,40 @@ Metrics include:
 
 | File/Folder | Description |
 | --- | --- |
-| src/main/resources/config | Contains the monitor.xml |
+| src/main/resources/config | Contains the monitor.xml and config.yml |
 | src/main/java | Contains source code to the VMWare Monitoring Extension |
 | target | Only obtained when using maven. Run 'maven clean install' to get the distributable .zip file |
 | pom.xml | Maven build script to package the project (only required if changing java code) |
 | Main Java File | src/main/java/com/appdynamics/monitors/VMWare/VMWareMonitor.java
 
+##Example config.yml
+
+```
+# By default the port is 80 for the host. If there is a specific port that is being used then append it to the host
+# Case 1, default port  : default-value="hostname"
+# Case 2, specific port : default-value="hostname:1234"
+host: ""
+username: ""
+
+#Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
+password: ""
+
+encryptedPassword:
+encryptionKey:
+
+#Provide information about hosts and vms to monitor.
+# "host" will take host name you want to monitor or "*" to monitor all hosts
+# "vms" will take vm names in the host specified or "*" to monitor all vms in that host
+# "*" will fetch all the available hosts/vms.
+hostConfig:
+    - host: "host1"
+      vms: ["vm1","vm2"]
+    - host: "host2"
+      vms: ["*"]   
+
+metricPrefix: "Custom Metrics|vmware|Status|"
+
+```
 
 ##Metrics
 
