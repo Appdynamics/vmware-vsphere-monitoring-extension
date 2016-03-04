@@ -1,5 +1,7 @@
 package com.appdynamics.monitors.VMWare;
 
+import static com.appdynamics.extensions.yml.YmlReader.readFromFile;
+
 import com.appdynamics.TaskInputArgs;
 import com.appdynamics.extensions.PathResolver;
 import com.appdynamics.extensions.crypto.CryptoUtil;
@@ -35,8 +37,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.appdynamics.extensions.yml.YmlReader.readFromFile;
 
 public class VMWareMonitor extends AManagedMonitor {
     /**
@@ -223,6 +223,11 @@ public class VMWareMonitor extends AManagedMonitor {
 
                 for (String vmNameFromConfig : vmConfigForHost) {
                     boolean foundVM = false;
+                    boolean allVms = false;
+
+                    if ("*".equals(vmNameFromConfig)) {
+                        allVms = true;
+                    }
 
                     for (VirtualMachine virtualMachine : vms) {
                         String vmName = virtualMachine.getName();
@@ -230,7 +235,9 @@ public class VMWareMonitor extends AManagedMonitor {
                         if (vmName.equalsIgnoreCase(vmNameFromConfig) || "*".equals(vmNameFromConfig)) {
                             populateVMMetrics(virtualMachine, baseMetricName, hostMetrics);
                             foundVM = true;
-                            break;
+                            if (!allVms) {
+                                break;
+                            }
                         }
                     }
 
