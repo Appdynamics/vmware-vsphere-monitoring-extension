@@ -21,6 +21,7 @@ hostConfig:
 #Replaces characters in metric name with the specified characters.
 # "replace" takes any regular expression
 # "replaceWith" takes the string to replace the matched characters
+# Note: Please don't try to replace "|" as we use this to separate metric sections.
 metricCharacterReplacer:
     - replace: ","
       replaceWith: " "
