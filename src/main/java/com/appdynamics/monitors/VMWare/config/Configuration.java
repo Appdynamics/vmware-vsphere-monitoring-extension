@@ -11,6 +11,7 @@ public class Configuration {
     private String encryptedPassword;
     private String encryptionKey;
     private List<HostConfig> hostConfig;
+    private List<MetricCharacterReplacer> metricCharacterReplacer;
     private String metricPrefix;
 
     public String getHost() {
@@ -59,6 +60,14 @@ public class Configuration {
 
     public void setHostConfig(List<HostConfig> hostConfig) {
         this.hostConfig = hostConfig;
+    }
+
+    public List<MetricCharacterReplacer> getMetricCharacterReplacer() {
+        return metricCharacterReplacer;
+    }
+
+    public void setMetricCharacterReplacer(List<MetricCharacterReplacer> metricCharacterReplacer) {
+        this.metricCharacterReplacer = metricCharacterReplacer;
     }
 
     public String getMetricPrefix() {

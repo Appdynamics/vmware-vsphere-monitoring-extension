@@ -16,6 +16,13 @@ encryptionKey:
 # "*" will fetch all the available hosts/vms.
 hostConfig:
     - host: "host1"
-      vms: ["vm1","vm2"]
+      vms: ["*"]
+
+#Replaces characters in metric name with the specified characters.
+# "replace" takes any regular expression
+# "replaceWith" takes the string to replace the matched characters
+metricCharacterReplacer:
+    - replace: ","
+      replaceWith: " "
 
 metricPrefix: "Custom Metrics|vmware|Status|"

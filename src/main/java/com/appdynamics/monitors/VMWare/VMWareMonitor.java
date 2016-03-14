@@ -7,6 +7,7 @@ import com.appdynamics.extensions.PathResolver;
 import com.appdynamics.extensions.crypto.CryptoUtil;
 import com.appdynamics.monitors.VMWare.config.Configuration;
 import com.appdynamics.monitors.VMWare.config.HostConfig;
+import com.appdynamics.monitors.VMWare.config.MetricCharacterReplacer;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -37,6 +38,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VMWareMonitor extends AManagedMonitor {
     /**
@@ -81,7 +84,21 @@ public class VMWareMonitor extends AManagedMonitor {
 
             List<HostConfig> hostConfigs = config.getHostConfig();
             if (hostConfigs != null && !hostConfigs.isEmpty()) {
-                connectAndFetchStats(host, username, password, hostConfigs, metricPrefix);
+
+                List<MetricCharacterReplacer> metricCharacterReplacers = config.getMetricCharacterReplacer();
+
+                Map<Pattern, String> replacers = new HashMap<Pattern, String>();
+
+                for (MetricCharacterReplacer metricCharacterReplacer : metricCharacterReplacers) {
+                    String replace = metricCharacterReplacer.getReplace();
+                    String replaceWith = metricCharacterReplacer.getReplaceWith();
+
+                    Pattern pattern = Pattern.compile(replace);
+
+                    replacers.put(pattern, replaceWith);
+                }
+
+                connectAndFetchStats(host, username, password, hostConfigs, replacers, metricPrefix);
             }
             logger.info("Finished execution");
             return new TaskOutput("Finished execution");
@@ -98,17 +115,17 @@ public class VMWareMonitor extends AManagedMonitor {
      * @param username     username
      * @param password     password
      * @param hostConfigs  host config
-     * @param metricPrefix metric prefix
-     * @throws TaskExecutionException
+     * @param replacers
+     * @param metricPrefix metric prefix  @throws TaskExecutionException
      */
-    private void connectAndFetchStats(String host, String username, String password, List<HostConfig> hostConfigs, String metricPrefix) throws TaskExecutionException {
+    private void connectAndFetchStats(String host, String username, String password, List<HostConfig> hostConfigs, Map<Pattern, String> replacers, String metricPrefix) throws TaskExecutionException {
         String url = "https://" + host + "/sdk";
         try {
             ServiceInstance serviceInstance = new ServiceInstance(new URL(url), username, password, true);
             Folder rootFolder = serviceInstance.getRootFolder();
             logger.info("Connection to: " + url + " Successful");
 
-            populateMetrics(rootFolder, hostConfigs, metricPrefix);
+            populateMetrics(rootFolder, hostConfigs, replacers, metricPrefix);
 
             close(serviceInstance);
         } catch (Exception e) {
@@ -117,13 +134,13 @@ public class VMWareMonitor extends AManagedMonitor {
         }
     }
 
-    private void populateMetrics(Folder rootFolder, List<HostConfig> hostConfigs, String metricPrefix) {
+    private void populateMetrics(Folder rootFolder, List<HostConfig> hostConfigs, Map<Pattern, String> replacers, String metricPrefix) {
 
         List<ManagedEntity> hostEntities = getHostMachines(rootFolder, hostConfigs);
 
         for (ManagedEntity hostEntity : hostEntities) {
             Map<String, Number> metrics = populateHostAndVMMetrics(hostEntity, hostConfigs);
-            printStats(metrics, metricPrefix);
+            printStats(metrics, replacers, metricPrefix);
         }
     }
 
@@ -262,13 +279,25 @@ public class VMWareMonitor extends AManagedMonitor {
         return Lists.newArrayList();
     }
 
-    private void printStats(Map<String, Number> stats, String metricPrefix) {
+    private void printStats(Map<String, Number> stats, Map<Pattern, String> replacers, String metricPrefix) {
         if (stats == null) {
             return;
         }
 
         for (Map.Entry<String, Number> stat : stats.entrySet()) {
-            printMetric(metricPrefix + stat.getKey(), stat.getValue());
+
+            String metricName = stat.getKey();
+
+            for (Map.Entry<Pattern, String> replacerEntry : replacers.entrySet()) {
+
+                Pattern pattern = replacerEntry.getKey();
+
+                Matcher matcher = pattern.matcher(metricName);
+                metricName = matcher.replaceAll(replacerEntry.getValue());
+            }
+
+
+            printMetric(metricPrefix + metricName, stat.getValue());
         }
     }
 
