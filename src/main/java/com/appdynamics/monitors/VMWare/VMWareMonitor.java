@@ -139,8 +139,8 @@ public class VMWareMonitor extends AManagedMonitor {
         List<ManagedEntity> hostEntities = getHostMachines(rootFolder, hostConfigs);
 
         for (ManagedEntity hostEntity : hostEntities) {
-            Map<String, Number> metrics = populateHostAndVMMetrics(hostEntity, hostConfigs);
-            printStats(metrics, replacers, metricPrefix);
+            Map<String, Number> metrics = populateHostAndVMMetrics(hostEntity, hostConfigs, replacers);
+            printStats(metrics, metricPrefix);
         }
     }
 
@@ -177,12 +177,17 @@ public class VMWareMonitor extends AManagedMonitor {
      * @param virtualMachine virtual machine
      * @param baseMetricPath base metric path
      * @param hostMetrics    host metrics
+     * @param replacers
      */
-    private void populateVMMetrics(VirtualMachine virtualMachine, String baseMetricPath, Map<String, Number> hostMetrics) {
+    private void populateVMMetrics(VirtualMachine virtualMachine, String baseMetricPath, Map<String, Number> hostMetrics, Map<Pattern, String> replacers) {
 
         VirtualMachineQuickStats vmStats = virtualMachine.getSummary().getQuickStats();
 
-        String baseMetricName = baseMetricPath + "|" + "VirtualMachine" + "|" + virtualMachine.getName();
+        String virtualMachineName = virtualMachine.getName();
+
+        virtualMachineName = applyReplacers(virtualMachineName, replacers);
+
+        String baseMetricName = baseMetricPath + "|" + "VirtualMachine" + "|" + virtualMachineName;
         hostMetrics.put(baseMetricName + "|Ballooned Memory", vmStats.getBalloonedMemory());
         hostMetrics.put(baseMetricName + "|Compressed Memory", vmStats.getCompressedMemory());
         hostMetrics.put(baseMetricName + "|Overhead Memory Consumed", vmStats.getConsumedOverheadMemory());
@@ -208,8 +213,9 @@ public class VMWareMonitor extends AManagedMonitor {
      * Fetches host statistics from VSphere
      *
      * @param hostEntity host entity
+     * @param replacers
      */
-    private Map<String, Number> populateHostAndVMMetrics(ManagedEntity hostEntity, List<HostConfig> hostConfigs) {
+    private Map<String, Number> populateHostAndVMMetrics(ManagedEntity hostEntity, List<HostConfig> hostConfigs, Map<Pattern, String> replacers) {
         Map<String, Number> hostMetrics = new HashMap<String, Number>();
 
         HostSystem hostSystem = (HostSystem) hostEntity;
@@ -217,7 +223,10 @@ public class VMWareMonitor extends AManagedMonitor {
         HostListSummaryQuickStats hostStats = hostSystem.getSummary().getQuickStats();
 
         String hostName = hostEntity.getName();
-        String baseMetricName = "HostSystem" + "|" + hostName;
+
+        String replacedHostName = applyReplacers(hostName, replacers);
+
+        String baseMetricName = "HostSystem" + "|" + replacedHostName;
         hostMetrics.put(baseMetricName + "|Distributed CPU Fairness", hostStats.getDistributedCpuFairness());
 
         hostMetrics.put(baseMetricName + "|Distributed Memory Fairness", hostStats.getDistributedMemoryFairness());
@@ -250,7 +259,7 @@ public class VMWareMonitor extends AManagedMonitor {
                         String vmName = virtualMachine.getName();
 
                         if (vmName.equalsIgnoreCase(vmNameFromConfig) || "*".equals(vmNameFromConfig)) {
-                            populateVMMetrics(virtualMachine, baseMetricName, hostMetrics);
+                            populateVMMetrics(virtualMachine, baseMetricName, hostMetrics, replacers);
                             foundVM = true;
                             if (!allVms) {
                                 break;
@@ -279,7 +288,7 @@ public class VMWareMonitor extends AManagedMonitor {
         return Lists.newArrayList();
     }
 
-    private void printStats(Map<String, Number> stats, Map<Pattern, String> replacers, String metricPrefix) {
+    private void printStats(Map<String, Number> stats, String metricPrefix) {
         if (stats == null) {
             return;
         }
@@ -288,17 +297,25 @@ public class VMWareMonitor extends AManagedMonitor {
 
             String metricName = stat.getKey();
 
-            for (Map.Entry<Pattern, String> replacerEntry : replacers.entrySet()) {
-
-                Pattern pattern = replacerEntry.getKey();
-
-                Matcher matcher = pattern.matcher(metricName);
-                metricName = matcher.replaceAll(replacerEntry.getValue());
-            }
-
-
             printMetric(metricPrefix + metricName, stat.getValue());
         }
+    }
+
+    private String applyReplacers(String name, Map<Pattern, String> replacers) {
+
+        if (name == null || name.length() == 0 || replacers == null) {
+            return name;
+        }
+
+        for (Map.Entry<Pattern, String> replacerEntry : replacers.entrySet()) {
+
+            Pattern pattern = replacerEntry.getKey();
+
+            Matcher matcher = pattern.matcher(name);
+            name = matcher.replaceAll(replacerEntry.getValue());
+        }
+
+        return name;
     }
 
     /**
