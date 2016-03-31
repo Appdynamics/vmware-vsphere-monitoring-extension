@@ -89,13 +89,15 @@ public class VMWareMonitor extends AManagedMonitor {
 
                 Map<Pattern, String> replacers = new HashMap<Pattern, String>();
 
-                for (MetricCharacterReplacer metricCharacterReplacer : metricCharacterReplacers) {
-                    String replace = metricCharacterReplacer.getReplace();
-                    String replaceWith = metricCharacterReplacer.getReplaceWith();
+                if (metricCharacterReplacers != null) {
+                    for (MetricCharacterReplacer metricCharacterReplacer : metricCharacterReplacers) {
+                        String replace = metricCharacterReplacer.getReplace();
+                        String replaceWith = metricCharacterReplacer.getReplaceWith();
 
-                    Pattern pattern = Pattern.compile(replace);
+                        Pattern pattern = Pattern.compile(replace);
 
-                    replacers.put(pattern, replaceWith);
+                        replacers.put(pattern, replaceWith);
+                    }
                 }
 
                 connectAndFetchStats(host, username, password, hostConfigs, replacers, metricPrefix);
@@ -103,8 +105,8 @@ public class VMWareMonitor extends AManagedMonitor {
             logger.info("Finished execution");
             return new TaskOutput("Finished execution");
         } catch (Exception e) {
-            logger.error("Failed tp execute the VMWare monitoring task", e);
-            throw new TaskExecutionException("Failed tp execute the VMWare monitoring task" + e);
+            logger.error("Failed to execute the VMWare monitoring task", e);
+            throw new TaskExecutionException("Failed to execute the VMWare monitoring task" + e);
         }
     }
 
