@@ -57,10 +57,12 @@ Metrics include:
 ##Example config.yml
 
 ```
-# By default the port is 80 for the host. If there is a specific port that is being used then append it to the host
+# By default the port is 80/443 ( http/https ) for the host. If there is a specific port that is being used then append it to the host
 # Case 1, default port  : default-value="hostname"
 # Case 2, specific port : default-value="hostname:1234"
 host: ""
+
+#Escape any special characters in username with "\"
 username: ""
 
 #Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
@@ -77,7 +79,14 @@ hostConfig:
     - host: "host1"
       vms: ["vm1","vm2"]
     - host: "host2"
-      vms: ["*"]   
+      vms: ["*"]
+
+#Replaces characters in metric name with the specified characters.
+# "replace" takes any regular expression
+# "replaceWith" takes the string to replace the matched characters
+metricCharacterReplacer:
+    - replace: ","
+      replaceWith: " "
 
 metricPrefix: "Custom Metrics|vmware|Status|"
 
