@@ -46,10 +46,13 @@ public class VMWareMonitor extends AManagedMonitor {
     private Folder rootFolder;
 
     public VMWareMonitor() {
+        printVersion();
+    }
+
+    private void printVersion() {
         String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
         logger.info(msg);
         System.out.println(msg);
-
     }
 
     private static String getImplementationVersion() {
@@ -62,13 +65,68 @@ public class VMWareMonitor extends AManagedMonitor {
      * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
      */
     public TaskOutput execute(Map<String, String> taskArguments, TaskExecutionContext taskExecutionContext) throws TaskExecutionException {
-        try {
+        printVersion();
+        logger.info("Starting the VMWare Monitoring task.");
 
-            logger.info("Starting the VMWare Monitoring task.");
+        try {
             String configFilename = getConfigFilename(taskArguments.get(CONFIG_ARG));
             if (!initialized) {
                 initialize(configFilename);
             }
+            configuration.executeTask();
+
+            logger.info("Finished execution");
+            return new TaskOutput("Finished execution");
+        } catch (Exception e) {
+            logger.error("Failed to execute the VMWare monitoring task", e);
+            throw new TaskExecutionException("Failed to execute the VMWare monitoring task" + e);
+        }
+    }
+
+    private void initialize(String configFile) {
+        if (!initialized) {
+
+            MetricWriteHelper metricWriteHelper = MetricWriteHelperFactory.create(this);
+            MonitorConfiguration conf = new MonitorConfiguration(METRIC_PREFIX, new TaskRunnable(), metricWriteHelper);
+
+            conf.setConfigYml(configFile, new MonitorConfiguration.FileWatchListener() {
+                public void onFileChange(File file) {
+                    connect();
+                }
+            });
+
+            conf.checkIfInitialized(MonitorConfiguration.ConfItem.CONFIG_YML, MonitorConfiguration.ConfItem.METRIC_PREFIX, MonitorConfiguration.ConfItem.METRIC_WRITE_HELPER);
+            this.configuration = conf;
+
+            connect();
+
+            initialized = true;
+        }
+    }
+
+    private void connect() {
+
+        if (configuration != null && configuration.getConfigYml() != null) {
+            Map<String, ?> config = configuration.getConfigYml();
+            String host = (String) config.get("host");
+            String username = (String) config.get("username");
+            String password = getPassword(config);
+
+            String url = "https://" + host + "/sdk";
+            try {
+                ServiceInstance serviceInstance = new ServiceInstance(new URL(url), username, password, true);
+                rootFolder = serviceInstance.getRootFolder();
+            } catch (Exception e) {
+                logger.error("Unable to connect to the host [" + host + "]", e);
+                throw new RuntimeException("Unable to connect to the host [" + host + "]", e);
+            }
+            logger.info("Connection to: " + url + " Successful");
+        }
+    }
+
+    private class TaskRunnable implements Runnable {
+
+        public void run() {
 
             Map<String, ?> config = configuration.getConfigYml();
 
@@ -106,49 +164,6 @@ public class VMWareMonitor extends AManagedMonitor {
             } else {
                 logger.info("hostConfig not specified in configuration. Exiting the process");
             }
-
-            logger.info("Finished execution");
-            return new TaskOutput("Finished execution");
-        } catch (Exception e) {
-            logger.error("Failed to execute the VMWare monitoring task", e);
-            throw new TaskExecutionException("Failed to execute the VMWare monitoring task" + e);
-        }
-    }
-
-    private void initialize(String configFile) throws TaskExecutionException {
-        if (!initialized) {
-
-            MetricWriteHelper metricWriteHelper = MetricWriteHelperFactory.create(this);
-            MonitorConfiguration conf = new MonitorConfiguration(METRIC_PREFIX, new TaskRunnable(), metricWriteHelper);
-
-            conf.setConfigYml(configFile);
-            conf.checkIfInitialized(MonitorConfiguration.ConfItem.CONFIG_YML, MonitorConfiguration.ConfItem.METRIC_PREFIX, MonitorConfiguration.ConfItem.METRIC_WRITE_HELPER);
-            this.configuration = conf;
-
-            Map<String, ?> config = configuration.getConfigYml();
-
-            String host = (String) config.get("host");
-            String username = (String) config.get("username");
-            String password = getPassword(config);
-
-            String url = "https://" + host + "/sdk";
-            try {
-                ServiceInstance serviceInstance = new ServiceInstance(new URL(url), username, password, true);
-                rootFolder = serviceInstance.getRootFolder();
-            } catch (Exception e) {
-                logger.error("Unable to connect to the host [" + host + "]", e);
-                throw new TaskExecutionException("Unable to connect to the host [" + host + "]", e);
-            }
-            logger.info("Connection to: " + url + " Successful");
-
-            initialized = true;
-        }
-    }
-
-    private class TaskRunnable implements Runnable {
-
-        public void run() {
-            configuration.getMetricWriter().printAllFromCache();
         }
     }
 

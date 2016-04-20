@@ -105,9 +105,11 @@ public class HostMetricCollector extends BaseMetricCollector {
         try {
             VirtualMachine[] vms = hostSystem.getVms();
 
-            if (vms != null && vms.length > 0) {
+            String hostName = hostSystem.getName();
+            List<String> vmConfigForHost = getVMConfigForHost(hostName, hostConfig);
 
-                String hostName = hostSystem.getName();
+            if (vms != null && vms.length > 0 && vmConfigForHost != null && vmConfigForHost.size() > 0) {
+
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Found " + vms.length + " vms for host [ " + hostName + " ]");
@@ -121,7 +123,7 @@ public class HostMetricCollector extends BaseMetricCollector {
                     logger.debug("VM machines [ " + sb.toString() + " ]");
                 }
 
-                List<String> vmConfigForHost = getVMConfigForHost(hostName, hostConfig);
+
 
                 for (String vmNameFromConfig : vmConfigForHost) {
                     boolean foundVM = false;
@@ -147,6 +149,8 @@ public class HostMetricCollector extends BaseMetricCollector {
                         logger.error("Could not find vm with name " + vmNameFromConfig);
                     }
                 }
+            } else {
+                logger.info("No vm's configured for the host [ "+hostName+" ]");
             }
         } catch (RemoteException e) {
             logger.error("Unable to get the VMs", e);
