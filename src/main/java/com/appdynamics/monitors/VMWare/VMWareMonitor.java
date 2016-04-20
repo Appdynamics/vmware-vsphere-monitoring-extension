@@ -46,14 +46,11 @@ public class VMWareMonitor extends AManagedMonitor {
     private Folder rootFolder;
 
     public VMWareMonitor() {
-        printVersion();
-    }
-
-    private void printVersion() {
         String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
         logger.info(msg);
         System.out.println(msg);
     }
+
 
     private static String getImplementationVersion() {
         return VMWareMonitor.class.getPackage().getImplementationTitle();
@@ -65,8 +62,13 @@ public class VMWareMonitor extends AManagedMonitor {
      * @see com.singularity.ee.agent.systemagent.api.ITask#execute(java.util.Map, com.singularity.ee.agent.systemagent.api.TaskExecutionContext)
      */
     public TaskOutput execute(Map<String, String> taskArguments, TaskExecutionContext taskExecutionContext) throws TaskExecutionException {
-        printVersion();
+        String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
+        logger.info(msg);
         logger.info("Starting the VMWare Monitoring task.");
+
+        Thread thread = Thread.currentThread();
+        ClassLoader originalCl = thread.getContextClassLoader();
+        thread.setContextClassLoader(AManagedMonitor.class.getClassLoader());
 
         try {
             String configFilename = getConfigFilename(taskArguments.get(CONFIG_ARG));
@@ -80,6 +82,8 @@ public class VMWareMonitor extends AManagedMonitor {
         } catch (Exception e) {
             logger.error("Failed to execute the VMWare monitoring task", e);
             throw new TaskExecutionException("Failed to execute the VMWare monitoring task" + e);
+        } finally {
+            thread.setContextClassLoader(originalCl);
         }
     }
 
