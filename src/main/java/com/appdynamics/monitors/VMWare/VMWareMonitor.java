@@ -132,6 +132,11 @@ public class VMWareMonitor extends AManagedMonitor {
 
         public void run() {
 
+            if (!initialized) {
+                logger.info("VMWare Monitor is still initializing");
+                return;
+            }
+
             Map<String, ?> config = configuration.getConfigYml();
 
             List<Map<String, Object>> hostConfigs = (List<Map<String, Object>>) config.get("hostConfig");
