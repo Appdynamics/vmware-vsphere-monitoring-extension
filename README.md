@@ -62,7 +62,7 @@ Metrics include:
 # Case 2, specific port : default-value="hostname:1234"
 host: ""
 
-#Escape any special characters in username with "\"
+#Escape special characters using "\"
 username: ""
 
 #Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
@@ -87,6 +87,13 @@ hostConfig:
 metricCharacterReplacer:
     - replace: ","
       replaceWith: " "
+
+hostThreads: 3
+vmThreads: 7
+
+taskSchedule:
+    numberOfThreads: 1
+    taskDelaySeconds: 50
 
 metricPrefix: "Custom Metrics|vmware|Status|"
 
@@ -149,6 +156,8 @@ To set encryptedPassword in config.yaml, follow the steps below:
 Always feel free to fork and contribute any changes directly via GitHub.
 
 ##Community
+
+Latest Version: 2.5.2
 
 Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/vmware-vsphere-monitoring-extension/) community.
 
