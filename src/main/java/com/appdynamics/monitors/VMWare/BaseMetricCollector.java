@@ -2,7 +2,9 @@ package com.appdynamics.monitors.VMWare;
 
 import com.appdynamics.extensions.util.MetricUtils;
 import com.appdynamics.extensions.util.MetricWriteHelper;
+import com.google.common.base.Strings;
 import com.singularity.ee.agent.systemagent.api.MetricWriter;
+import org.apache.log4j.Logger;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -12,6 +14,8 @@ import java.util.regex.Pattern;
  * @author Satish Muddam
  */
 public abstract class BaseMetricCollector {
+
+    private static final Logger logger = Logger.getLogger(BaseMetricCollector.class);
 
     private MetricWriteHelper metricWriter;
     private String metricPrefix;
@@ -46,7 +50,18 @@ public abstract class BaseMetricCollector {
      */
     protected void printMetric(String metricName, Object metricValue) {
 
-        metricWriter.printMetric(metricPrefix + "|" + metricName, MetricUtils.toWholeNumberString(metricValue), MetricWriter.METRIC_AGGREGATION_TYPE_OBSERVATION,
-                MetricWriter.METRIC_TIME_ROLLUP_TYPE_CURRENT, MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_INDIVIDUAL);
+        if (metricValue != null) {
+            String value = MetricUtils.toWholeNumberString(metricValue);
+            if (!Strings.isNullOrEmpty(value)) {
+                logger.debug(String.format("Printing metric %s with value %s", metricName, metricValue));
+
+                metricWriter.printMetric(metricPrefix + "|" + metricName, value, MetricWriter.METRIC_AGGREGATION_TYPE_OBSERVATION,
+                        MetricWriter.METRIC_TIME_ROLLUP_TYPE_CURRENT, MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_INDIVIDUAL);
+            } else {
+                logger.info(String.format("Ignoring metric %s as it has no value", metricName));
+            }
+        } else {
+            logger.info(String.format("Ignoring metric %s as it has null value", metricName));
+        }
     }
 }

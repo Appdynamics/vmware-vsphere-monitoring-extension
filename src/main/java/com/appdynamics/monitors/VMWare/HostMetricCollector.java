@@ -120,7 +120,7 @@ public class HostMetricCollector extends BaseMetricCollector {
                         }
                         sb.append(vm.getName());
                     }
-                    logger.debug("VM machines [ " + sb.toString() + " ]");
+                    logger.trace("VM machines [ " + sb.toString() + " ]");
                 }
 
 
