@@ -54,7 +54,7 @@ public class VMMetricCollector extends BaseMetricCollector {
                 }
             }
         });
-
+        poolShutdownService.shutdown();
     }
 
     public void addVMs(List<VirtualMachine> virtualMachines, String baseMetricPath) {
