@@ -23,6 +23,7 @@ Metrics include:
 * Uptime
 * Memory MB
 * Num CPU
+* Status
 
 #### Host Metrics
 * Distributed CPU Fairness
@@ -32,6 +33,7 @@ Metrics include:
 * Up Time
 * Memory Size
 * CPU Cores
+* Status
 
 ## Installation
 
@@ -134,6 +136,7 @@ metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
 | Uptime | The system uptime of the VM in seconds. |
 | Memory MB | Memory in MB |
 | Num CPU | Number of CPU Cores |
+| Status | Shows the current status colour code of the VM. 0=gray, 1=green, 2=yellow, 3=red |
 
 ### Host Metrics
 | Metric | Description |
@@ -144,7 +147,8 @@ metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
 | Overall Memory Usage | Physical memory usage on the host in MB. This is only available if the host is connected |
 | Up Time | The system uptime of the host in seconds.  |
 | Memory Size | Memory size of the host machine  |
-| CPU Cores | CPU core sof this host machine  |
+| CPU Cores | CPU cores of this host machine  |
+| Status | Shows the current status colour code of the Host. 0=gray, 1=green, 2=yellow, 3=red |
 
 
 ### Caution
@@ -164,6 +168,28 @@ To avoid setting the clear text password in the config.yml, please follow the pr
 1.  To encrypt password from the commandline go to `<Machine_Agent>`/monitors/VMWareMonitor dir and run the below common
 
 <pre>java -cp "vsphere-monitoring-extension.jar" com.appdynamics.extensions.crypto.Encryptor myKey myPassword</pre>
+
+## Workbench
+
+Workbench is a feature by which you can preview the metrics before registering it with the controller. This is useful if you want to fine tune the configurations. Workbench is embedded into the extension jar.
+
+To use the workbench
+
+* Follow all the installation steps
+* Start the workbench with the command
+~~~
+  java -jar /path/to/MachineAgent/monitors/VMWareMonitor/vsphere-monitoring-extension.jar
+  This starts an http server at http://host:9090/. This can be accessed from the browser.
+~~~
+* If the server is not accessible from outside/browser, you can use the following end points to see the list of registered metrics and errors.
+~~~
+    #Get the stats
+    curl http://localhost:9090/api/stats
+    #Get the registered metrics
+    curl http://localhost:9090/api/metric-paths
+~~~
+* You can make the changes to config.yml and validate it from the browser or the API
+* Once the configuration is complete, you can kill the workbench and start the Machine Agent
 
 ## Contributing
 
