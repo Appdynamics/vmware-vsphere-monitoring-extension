@@ -62,6 +62,7 @@ public class VMWareMonitor extends ABaseMonitor {
         }
     }
 
+    @Override
     protected List<Map<String, ?>> getServers() {
         List<Map<String, ?>> servers = (List<Map<String, ?>>) this.getContextConfiguration().getConfigYml().get(Constants.SERVERS);
         AssertUtils.assertNotNull(servers, "The 'servers' section in config.yml is not initialised");

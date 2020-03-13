@@ -16,7 +16,6 @@ import com.vmware.vim25.HostListSummaryQuickStats;
 import com.vmware.vim25.ManagedEntityStatus;
 import com.vmware.vim25.mo.HostSystem;
 import com.vmware.vim25.mo.ManagedEntity;
-import com.vmware.vim25.mo.PerformanceManager;
 import com.vmware.vim25.mo.VirtualMachine;
 import org.slf4j.Logger;
 

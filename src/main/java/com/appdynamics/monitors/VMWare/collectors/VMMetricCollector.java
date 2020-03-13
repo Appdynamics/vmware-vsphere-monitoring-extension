@@ -10,6 +10,7 @@ package com.appdynamics.monitors.VMWare.collectors;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.monitors.VMWare.metrics.Metric;
 import com.appdynamics.monitors.VMWare.metrics.VMMetrics;
+import com.vmware.vim25.ManagedEntityStatus;
 import com.vmware.vim25.VirtualMachineQuickStats;
 import com.vmware.vim25.mo.VirtualMachine;
 import org.slf4j.Logger;
@@ -40,11 +41,23 @@ public class VMMetricCollector extends BaseMetricCollector {
 
         String virtualMachineName = virtualMachine.getName();
 
+        ManagedEntityStatus overallStatus = virtualMachine.getOverallStatus();
+
+        String baseMetricName = getMetricPrefix() + "|" + "VirtualMachine" + "|" + virtualMachineName;
+
+        if (ManagedEntityStatus.red.equals(overallStatus)) {
+            logger.error("VM [{}] status is red, not collecting metrics", virtualMachineName);
+            com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
+            getCollectedMetrics().add(thisMetric);
+            return;
+        } else {
+            com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
+            getCollectedMetrics().add(thisMetric);
+        }
+
         logger.info("Started collecting metrics for vm [{}]", virtualMachineName);
 
         VirtualMachineQuickStats vmStats = virtualMachine.getSummary().getQuickStats();
-
-        String baseMetricName = getMetricPrefix() + "|" + "VirtualMachine" + "|" + virtualMachineName;
 
         try {
             Metric[] metrics = vmMetrics.getMetrics();
