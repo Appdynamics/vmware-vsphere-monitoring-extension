@@ -121,11 +121,6 @@ public class VMMetricCollector extends BaseMetricCollector {
                     logger.debug("Error collecting metric [{}] on vm [{}]", name, virtualMachineName, e);
                 }
 
-                String alias = metric.getAlias();
-                if (alias != null) {
-                    name = alias;
-                }
-
                 Map<String, String> propertiesMap = getObjectMapper().convertValue(metric, Map.class);
 
                 StringBuilder sb = new StringBuilder(baseMetricName);

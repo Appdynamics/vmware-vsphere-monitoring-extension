@@ -8,7 +8,7 @@
 package com.appdynamics.monitors.VMWare.collectors;
 
 import com.appdynamics.extensions.metrics.Metric;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.concurrent.Phaser;

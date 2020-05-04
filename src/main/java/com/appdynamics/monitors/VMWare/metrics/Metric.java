@@ -9,7 +9,6 @@
 package com.appdynamics.monitors.VMWare.metrics;
 
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -23,8 +22,6 @@ import java.util.Map;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Metric implements Cloneable {
-
-    private static final Logger logger = Logger.getLogger(Metric.class);
 
     @XmlAttribute
     private String name;

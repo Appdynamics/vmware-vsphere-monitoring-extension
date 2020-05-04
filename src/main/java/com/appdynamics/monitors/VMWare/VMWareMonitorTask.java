@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Phaser;
 
 public class VMWareMonitorTask implements AMonitorTaskRunnable {
@@ -60,7 +61,7 @@ public class VMWareMonitorTask implements AMonitorTaskRunnable {
 
     public void run() {
 
-        List<com.appdynamics.extensions.metrics.Metric> collectedMetrics = new ArrayList<>();
+        List<com.appdynamics.extensions.metrics.Metric> collectedMetrics = new CopyOnWriteArrayList<>();
         String host = (String) vmWareServer.get(com.appdynamics.extensions.Constants.HOST);
 
         StringBuilder heartbeatMetricPath = new StringBuilder(contextConfiguration.getMetricPrefix());

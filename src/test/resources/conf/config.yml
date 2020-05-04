@@ -5,16 +5,16 @@ servers:
   # displayName is optional if you are configuring only 1 server. If you are configuring multiple servers, configuring displayName is mandatory.
   # When configured displayName is added to the metric path
   - displayName: ""
-    host: ""
+    host: "vmhost"
 
     #Escape special characters using "\"
-    username: ""
+    username: "admin"
 
     #Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
-    password:
+    password: "admin"
 
-    encryptedPassword: ""
-    encryptionKey: ""
+    encryptedPassword:
+    encryptionKey:
 
       #Provide information about hosts and vms to monitor.
       # "host" will take host name you want to monitor or "*" to monitor all hosts
@@ -22,9 +22,7 @@ servers:
       # "*" will fetch all the available hosts/vms.
     hostConfig:
       - host: "host1"
-        vms: ["vm1","vm2"]
-      - host: "host2"
-        vms: ["*"]
+        vms: ["vm1", "vm2"]
 
 #Replaces characters in metric name with the specified characters. By default extension takes care of replacing "|",":",",".
 #Specify any other char you want to replace here.
@@ -43,11 +41,11 @@ taskSchedule:
   taskDelaySeconds: 60
 
 #This will create this metric in all the tiers, under this path. Please make sure to have a trailing |
-#metricPrefix: "Custom Metrics|vmware|Status|"
+metricPrefix: "Custom Metrics|vmware|Status|"
 
 #This will create it in specific Tier aka Component. Replace <COMPONENT_ID>. Please make sure to have a trailing |.
 #To find out the COMPONENT_ID, please see the screen shot here https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
+#metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
 
 # If any of the following fields are not set, the values of the specific fields are set from the system properties of the corresponding fields as specified in the comments.
 # If the system properties are not set for the field, then the data is retrieved from machine agent configFile. Please refer to ControllerInfoFactory for more details.

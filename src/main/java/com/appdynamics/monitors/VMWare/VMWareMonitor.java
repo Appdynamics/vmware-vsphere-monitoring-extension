@@ -13,25 +13,22 @@ import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.util.AssertUtils;
 import com.appdynamics.monitors.VMWare.metrics.VMWareMetrics;
 import com.appdynamics.monitors.VMWare.util.Constants;
-import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
 
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class VMWareMonitor extends ABaseMonitor {
 
     private static final String DEFAULT_METRIC_PREFIX = Constants.DEFAULT_METRIC_PREFIX;
 
     private static final Logger logger = ExtensionsLoggerFactory.getLogger(VMWareMonitor.class);
+
+    public VMWareMonitor() {
+        String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
+        logger.info(msg);
+        System.out.println(msg);
+    }
 
     protected String getDefaultMetricPrefix() {
         return DEFAULT_METRIC_PREFIX;
@@ -72,33 +69,5 @@ public class VMWareMonitor extends ABaseMonitor {
     @Override
     protected void initializeMoreStuff(Map<String, String> args) {
         getContextConfiguration().setMetricXml(args.get(Constants.METRIC_FILE), VMWareMetrics.class);
-    }
-
-    public static void main(String[] args) throws TaskExecutionException {
-        ConsoleAppender ca = new ConsoleAppender();
-        ca.setWriter(new OutputStreamWriter(System.out));
-        ca.setLayout(new PatternLayout("[%t] %d{DATE} %5p %c{1} - %m%n"));
-        ca.setThreshold(Level.DEBUG);
-
-        org.apache.log4j.Logger.getRootLogger().addAppender(ca);
-
-        final VMWareMonitor monitor = new VMWareMonitor();
-
-        final Map<String, String> taskArgs = new HashMap<String, String>();
-        taskArgs.put("config-file", "src/main/resources/conf/config.yml");
-        taskArgs.put("metric-file", "src/main/resources/conf/metrics.xml");
-
-        //monitor.execute(taskArgs, null);
-
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                try {
-                    monitor.execute(taskArgs, null);
-                } catch (Exception e) {
-                    logger.error("Error while running the task", e);
-                }
-            }
-        }, 2, 30, TimeUnit.SECONDS);
     }
 }

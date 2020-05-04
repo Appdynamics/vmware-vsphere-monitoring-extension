@@ -99,12 +99,7 @@ public class HostMetricCollector extends BaseMetricCollector {
                     } else if ("Memory Size".equals(name)) {
                         value = BigDecimal.valueOf(hostSystem.getHardware().getMemorySize());
                     } else if ("CPU Cores".equals(name)) {
-                        value = BigDecimal.valueOf(hostSystem.getHardware().getCpuInfo().getNumCpuCores());
-                    }
-
-                    String alias = metric.getAlias();
-                    if (alias != null) {
-                        name = alias;
+                        value = BigDecimal.valueOf(numCpuCores);
                     }
 
                     Map<String, String> propertiesMap = getObjectMapper().convertValue(metric, Map.class);
@@ -146,10 +141,14 @@ public class HostMetricCollector extends BaseMetricCollector {
         logger.info("Collecting vms for [{}]", hostName);
 
         try {
-            VirtualMachine[] vms = hostSystem.getVms();
-
 
             List<String> vmConfigForHost = getVMConfigForHost(hostName, hostConfig);
+
+            if (vmConfigForHost == null || vmConfigForHost.size() <= 0) {
+                return allVMs;
+            }
+
+            VirtualMachine[] vms = hostSystem.getVms();
 
             if (vms != null && vms.length > 0 && vmConfigForHost != null && vmConfigForHost.size() > 0) {
 
