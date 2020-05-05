@@ -27,7 +27,6 @@ public class VMWareMonitor extends ABaseMonitor {
     public VMWareMonitor() {
         String msg = "Using Monitor Version [" + getImplementationVersion() + "]";
         logger.info(msg);
-        System.out.println(msg);
     }
 
     protected String getDefaultMetricPrefix() {

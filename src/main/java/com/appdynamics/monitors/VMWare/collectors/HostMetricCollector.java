@@ -109,7 +109,7 @@ public class HostMetricCollector extends BaseMetricCollector {
 
                     String fullMetricPath = sb.toString();
 
-                    com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric(name, value.toString(), fullMetricPath, propertiesMap);
+                    com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric(name, String.valueOf(value), fullMetricPath, propertiesMap);
                     getCollectedMetrics().add(thisMetric);
                 } catch (Exception e) {
                     logger.debug("Error collecting metric [{}] on host[{}]", name, hostName, e);
@@ -167,10 +167,10 @@ public class HostMetricCollector extends BaseMetricCollector {
 
                 for (String vmNameFromConfig : vmConfigForHost) {
                     boolean foundVM = false;
-                    boolean allVms = false;
+                    boolean shouldCollectAllVMs = false;
 
                     if ("*".equals(vmNameFromConfig)) {
-                        allVms = true;
+                        shouldCollectAllVMs = true;
                     }
 
                     for (VirtualMachine virtualMachine : vms) {
@@ -179,14 +179,14 @@ public class HostMetricCollector extends BaseMetricCollector {
                         if (vmName.equalsIgnoreCase(vmNameFromConfig) || "*".equals(vmNameFromConfig)) {
                             allVMs.add(virtualMachine);
                             foundVM = true;
-                            if (!allVms) {
+                            if (!shouldCollectAllVMs) {
                                 break;
                             }
                         }
                     }
 
                     if (!foundVM) {
-                        logger.error("Could not find vm with name " + vmNameFromConfig);
+                        logger.debug("Could not find vm with name " + vmNameFromConfig);
                     }
                 }
             } else {

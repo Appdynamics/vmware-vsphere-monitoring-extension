@@ -52,7 +52,7 @@ public class VMWareMonitorTask implements AMonitorTaskRunnable {
         this.vmWareServer = vmWareServer;
         this.vmWareMetrics = (VMWareMetrics) contextConfiguration.getMetricsXml();
         this.metricWriteHelper = tasksExecutionServiceProvider.getMetricWriteHelper();
-        displayName = (String) vmWareServer.get(Constants.DISPLAY_NAME);
+        this.displayName = (String) vmWareServer.get(Constants.DISPLAY_NAME);
     }
 
     public void onTaskComplete() {
@@ -80,7 +80,8 @@ public class VMWareMonitorTask implements AMonitorTaskRunnable {
             com.appdynamics.extensions.metrics.Metric heartBeatMetric = new com.appdynamics.extensions.metrics.Metric(Constants.HEARTBEAT, String.valueOf(0), heartbeatMetricPath.toString());
             collectedMetrics.add(heartBeatMetric);
             metricWriteHelper.transformAndPrintMetrics(collectedMetrics);
-            throw e;
+            logger.error("Error connecting to server with name {}", vmWareServer.get(com.appdynamics.extensions.Constants.HOST));
+            return;
         }
 
         //If rootFolder is null, exit
