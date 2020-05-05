@@ -1,0 +1,49 @@
+<!--
+  ~ /*
+  ~   Copyright 2018. AppDynamics LLC and its affiliates.
+  ~   All Rights Reserved.
+  ~   This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+  ~   The copyright notice above does not evidence any actual or intended publication of such source code.
+  ~  */
+  -->
+
+<!--
+aggregationType = AVERAGE | SUM | OBSERVATION
+timeRollUpType = AVERAGE | SUM | CURRENT
+clusterRollUpType = INDIVIDUAL | COLLECTIVE
+-->
+<!--
+Set delta = true for metric to report per-min data
+-->
+<VMWareMetrics>
+    <HostMetrics>
+        <metric name="Distributed CPU Fairness" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Distributed Memory Fairness" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overall CPU Usage" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overall CPU Usage %" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overall Memory Usage" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Up Time" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Memory Size" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="CPU Cores" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+    </HostMetrics>
+
+    <VMMetrics>
+        <metric name="Ballooned Memory" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Compressed Memory" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overhead Memory Consumed" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Distributed CPU Entitlement" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Distributed Memory Entitlement" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Guest Memory Usage" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Host Memory Usage" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overall CPU Usage" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Overall CPU Demand" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Private Memory" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Shared Memory" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Static CPU Entitlement" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Static Memory Entitlement" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Swapped Memory" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Up Time" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Memory MB" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+        <metric name="Num CPU" aggregationType="OBSERVATION" timeRollUpType="CURRENT" clusterRollUpType="COLLECTIVE" />
+    </VMMetrics>
+</VMWareMetrics>
