@@ -44,7 +44,6 @@ Metrics include:
 5. Also in hostConfig, the host and vms arguments needs to be configured. There are two ways to specify the value for this argument. If * is specified as the value then all the VMs/Hosts associated with the host will be fetched. If a comma separated list of values is provided, then only those VMs/Hosts wil be fetched. (see config.yml for examples)
 6. In metrics.xml you can comment unwanted metrics to reduce the number of metrics reported to controller
 7. Restart the machineagent
-8. In the AppDynamics Metric Browser, look for: Application Infrastructure Performance  | \<Tier\> | Custom Metrics | VMWare | Status
 
 
 ## Directory Structure
@@ -110,6 +109,29 @@ taskSchedule:
 #This will create it in specific Tier aka Component. Replace <COMPONENT_ID>. Please make sure to have a trailing |.
 #To find out the COMPONENT_ID, please see the screen shot here https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
 metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
+
+# If any of the following fields are not set, the values of the specific fields are set from the system properties of the corresponding fields as specified in the comments.
+# If the system properties are not set for the field, then the data is retrieved from machine agent configFile. Please refer to ControllerInfoFactory for more details.
+# Values provided here can be overridden if the same field is configured in either controller-info.xml or system properties.
+controllerInfo:
+  controllerHost: ""  # -Dappdynamics.controller.hostName
+  controllerPort:  # -Dappdynamics.controller.port
+  controllerSslEnabled: false # -Dappdynamics.controller.ssl.enabled
+  enableOrchestration: false # N/A
+  uniqueHostId: "" # -Dappdynamics.agent.uniqueHostId
+  username: "admin" # -Dappdynamics.agent.monitors.controller.username
+  password: "" # -Dappdynamics.agent.monitors.controller.password
+  encryptedPassword: "j+0oxTzUtw2xAdaq4UUq/Q==" # -Dappdynamics.agent.monitors.controller.encryptedPassword
+  accountAccessKey: "" # -Dappdynamics.agent.accountAccessKey
+  account: "" # -Dappdynamics.agent.accountName
+  machinePath: "" # -Dappdynamics.machine.agent.hierarchyPath
+  simEnabled: false # -Dappdynamics.sim.enabled
+  applicationName: "" # -Dappdynamics.agent.applicationName
+  tierName: "" # -Dappdynamics.agent.tierName
+  nodeName: "" # -Dappdynamics.agent.nodeName
+
+#Encryption key for your controllerInfo password
+encryptionKey: "abcd"
 
 ```
 
@@ -197,7 +219,7 @@ Always feel free to fork and contribute any changes directly via GitHub.
 
 ## Community
 
-Latest Version: 3.0.0-SNAPSHOT
+Latest Version: 3.0.0
 
 Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/vmware-vsphere-monitoring-extension/) community.
 
