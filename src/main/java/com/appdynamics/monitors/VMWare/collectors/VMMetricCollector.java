@@ -45,21 +45,21 @@ public class VMMetricCollector extends BaseMetricCollector {
 
         String baseMetricName = getMetricPrefix() + "|" + "VirtualMachine" + "|" + virtualMachineName;
 
-        if (ManagedEntityStatus.red.equals(overallStatus)) {
-            logger.error("VM [{}] status is red, not collecting metrics", virtualMachineName);
-            com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
-            getCollectedMetrics().add(thisMetric);
-            return;
-        } else {
-            com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
-            getCollectedMetrics().add(thisMetric);
-        }
-
-        logger.info("Started collecting metrics for vm [{}]", virtualMachineName);
-
-        VirtualMachineQuickStats vmStats = virtualMachine.getSummary().getQuickStats();
-
         try {
+            if (ManagedEntityStatus.red.equals(overallStatus)) {
+                logger.error("VM [{}] status is red, not collecting metrics", virtualMachineName);
+                com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
+                getCollectedMetrics().add(thisMetric);
+                return;
+            } else {
+                com.appdynamics.extensions.metrics.Metric thisMetric = new com.appdynamics.extensions.metrics.Metric("status", String.valueOf(overallStatus.ordinal()), baseMetricName + "|Status");
+                getCollectedMetrics().add(thisMetric);
+            }
+    
+            logger.info("Started collecting metrics for vm [{}]", virtualMachineName);
+
+            VirtualMachineQuickStats vmStats = virtualMachine.getSummary().getQuickStats();
+
             Metric[] metrics = vmMetrics.getMetrics();
 
             for (Metric metric : metrics) {
