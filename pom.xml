@@ -11,7 +11,7 @@
 
     <groupId>com.appdynamics.extensions</groupId>
     <artifactId>vsphere-monitoring-extension</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
     <name>vsphere-monitoring-extension</name>
     <url>http://maven.apache.org</url>
