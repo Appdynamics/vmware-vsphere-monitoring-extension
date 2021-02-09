@@ -7,7 +7,6 @@ servers:
   - displayName: ""
     host: ""
 
-    #Escape special characters using "\"
     username: ""
 
     #Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
@@ -38,9 +37,9 @@ servers:
 # hosts and vms from which the extension has to collect metrics. You will have to increase numberOfThreads in this case.
 numberOfThreads: 15
 
-taskSchedule:
-  numberOfThreads: 1
-  taskDelaySeconds: 60
+#taskSchedule:
+#  numberOfThreads: 1
+#  taskDelaySeconds: 60
 
 #This will create this metric in all the tiers, under this path. Please make sure to have a trailing |
 #metricPrefix: "Custom Metrics|vmware|Status|"

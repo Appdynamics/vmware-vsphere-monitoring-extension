@@ -1,4 +1,7 @@
 
+### Version 3.0.2
+* Upgraded to appd-exts-commons 2.2.4
+
 ### Version 3.0.1
 * Fix for metric reporting red VM
 
