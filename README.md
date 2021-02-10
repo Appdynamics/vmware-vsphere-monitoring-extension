@@ -219,7 +219,7 @@ Always feel free to fork and contribute any changes directly via GitHub.
 
 ## Community
 
-Latest Version: 3.0.1
+Latest Version: 3.0.2
 
 Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/vmware-vsphere-monitoring-extension/) community.
 
