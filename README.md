@@ -4,36 +4,13 @@ This extension works only with the standalone machine agent.
 
 ## Use Case
 
-VMware vSphere ([www.vmware.com](http://www.vmware.com/products/datacenter-virtualization/vsphere/overview.html)) is a cloud computing virtualization operating system. The VMWare extension gets statistics from the VSphere server and displays them in the AppDynamics Metric Browser.
+VMware vSphere ([www.vmware.com](http://www.vmware.com/products/datacenter-virtualization/vsphere/overview.html)) is a cloud computing virtualization operating system. The VMWare extension gets statistics from the VSphere server and displays them in the AppDynamics Metric Browser.
 
-Metrics include:
+## Prerequisites
+1. Before the extension is installed, the prerequisites mentioned [here](https://community.appdynamics.com/t5/Knowledge-Base/Extensions-Prerequisites-Guide/ta-p/35213) need to be met. Please do not proceed with the extension installation if the specified prerequisites are not met. 
+2. The Extension also needs a Vsphere server to be installed.
+3. The extension needs to be able to connect to VMWare Vsphere server in order to collect and send metrics. To do this, you will have to either establish a remote connection in between the extension and the product, or have an agent on the same machine running the product in order for the extension to collect and send the metrics.
 
-#### VM Metrics
-* Ballooned Memory
-* Compressed Memory
-* Overhead Memory Consumed
-* Distributed CPU Entitlement
-* Distributed Memory Entitlement
-* Guest and Host Memory Usage
-* Overall CPU Demand and Usage
-* Private and Shared Memory
-* Static CPU Entitlement
-* Static Memory Entitlement
-* Swapped Memory
-* Uptime
-* Memory MB
-* Num CPU
-* Status
-
-#### Host Metrics
-* Distributed CPU Fairness
-* Distributed Memory Fairness
-* Overall CPU Usage
-* Overall Memory Usage
-* Up Time
-* Memory Size
-* CPU Cores
-* Status
 
 ## Installation
 
@@ -45,19 +22,27 @@ Metrics include:
 6. In metrics.xml you can comment unwanted metrics to reduce the number of metrics reported to controller
 7. Restart the machineagent
 
+Please place the extension in the "monitors" directory of your Machine Agent installation directory. Do not place the extension in the "extensions" directory of your Machine Agent installation directory.
 
-## Directory Structure
+## Configuartion
 
-| File/Folder | Description |
-| --- | --- |
-| src/main/resources/conf | Contains the monitor.xml, config.yml and metrics.xml |
-| src/main/java | Contains source code to the VMWare Monitoring Extension |
-| target | Only obtained when using maven. Run 'maven clean install' to get the distributable .zip file |
-| pom.xml | Maven build script to package the project (only required if changing java code) |
-| Main Java File | src/main/java/com/appdynamics/monitors/VMWare/VMWareMonitor.java
+### config.yml
 
-## Example config.yml
+Please copy all the contents of the config.yml file and go to http://www.yamllint.com/ . On reaching the website, paste the contents and press the “Go” button on the bottom left.
 
+If you get a valid output, that means your formatting is correct and you may move on to the next step.
+
+#### Metric prefix
+Please follow section 2.1 of the [Document](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-troubleshoot-missing-custom-metrics-or-extensions/ta-p/28695) to set up metric prefix.
+```
+# Use this only if SIM is enabled. Please make sure to have a trailing |
+#metricPrefix: "Custom Metrics|vmware|Status|"
+
+#This will create it in specific Tier aka Component. Replace <COMPONENT_ID>. Please make sure to have a trailing |.
+metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
+```
+
+#### Servers configuration
 ```
 # By default the port is 80/443 ( http/https ) for the host. If there is a specific port that is being used then append it to the host
 # Case 1, default port  : default-value="hostname"
@@ -68,7 +53,6 @@ servers:
   - displayName: ""
     host: ""
 
-    #Escape special characters using "\"
     username: ""
 
     #Provide password or encryptedPassword and encryptionKey. See the documentation to find about password encryption.
@@ -86,7 +70,16 @@ servers:
         vms: ["vm1","vm2"]
       - host: "host2"
         vms: ["*"]
+```
+- displayName: Display name for your server. It will be included in metric path. If single server is configured then it is not mandatory. For multiple server configuration, it is mandatory
+- username: Username for your vsphere server
+- password: Password for your vsphere server
+- encryptedPassword: To configure encrypted password (refer Credentials Encryption section for more details)
+- hostConfig: Configurations for hosts and vms to monitor 
 
+#### Metric path replacements
+Please refer to this [document](https://community.appdynamics.com/t5/Knowledge-Base/Metric-Path-CharSequence-Replacements-in-Extensions/ta-p/35412) to get details on Metric path replacements
+```
 #Replaces characters in metric name with the specified characters. By default extension takes care of replacing "|",":",",".
 #Specify any other char you want to replace here.
 # "replace" takes any regular expression
@@ -94,45 +87,19 @@ servers:
 #metricPathReplacements:
 #    - replace: ","
 #      replaceWith: " "
-
+```
+#### Number of threads
+```
 #Configure this based on the number of hosts and vms you want to monitor. You will get "Queue Capacity reached!! Rejecting runnable tasks.. " error if the numberOfThreads is far less than the
 # hosts and vms from which the extension has to collect metrics. You will have to increase numberOfThreads in this case.
 numberOfThreads: 15
-
+```
+#### Task Schedule
+Please refer this [document](https://community.appdynamics.com/t5/Knowledge-Base/Task-Schedule-for-Extensions/ta-p/35414) to get  details on Task schedule feature.
+```
 taskSchedule:
   numberOfThreads: 1
   taskDelaySeconds: 60
-
-#This will create this metric in all the tiers, under this path. Please make sure to have a trailing |
-#metricPrefix: "Custom Metrics|vmware|Status|"
-
-#This will create it in specific Tier aka Component. Replace <COMPONENT_ID>. Please make sure to have a trailing |.
-#To find out the COMPONENT_ID, please see the screen shot here https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: "Server|Component:<COMPONENT_ID>|Custom Metrics|vmware|Status|"
-
-# If any of the following fields are not set, the values of the specific fields are set from the system properties of the corresponding fields as specified in the comments.
-# If the system properties are not set for the field, then the data is retrieved from machine agent configFile. Please refer to ControllerInfoFactory for more details.
-# Values provided here can be overridden if the same field is configured in either controller-info.xml or system properties.
-controllerInfo:
-  controllerHost: ""  # -Dappdynamics.controller.hostName
-  controllerPort:  # -Dappdynamics.controller.port
-  controllerSslEnabled: false # -Dappdynamics.controller.ssl.enabled
-  enableOrchestration: false # N/A
-  uniqueHostId: "" # -Dappdynamics.agent.uniqueHostId
-  username: "admin" # -Dappdynamics.agent.monitors.controller.username
-  password: "" # -Dappdynamics.agent.monitors.controller.password
-  encryptedPassword: "j+0oxTzUtw2xAdaq4UUq/Q==" # -Dappdynamics.agent.monitors.controller.encryptedPassword
-  accountAccessKey: "" # -Dappdynamics.agent.accountAccessKey
-  account: "" # -Dappdynamics.agent.accountName
-  machinePath: "" # -Dappdynamics.machine.agent.hierarchyPath
-  simEnabled: false # -Dappdynamics.sim.enabled
-  applicationName: "" # -Dappdynamics.agent.applicationName
-  tierName: "" # -Dappdynamics.agent.tierName
-  nodeName: "" # -Dappdynamics.agent.nodeName
-
-#Encryption key for your controllerInfo password
-encryptionKey: "abcd"
-
 ```
 
 ## Metrics
@@ -173,8 +140,6 @@ encryptionKey: "abcd"
 | Status | Shows the current status colour code of the Host. 0=gray, 1=green, 2=yellow, 3=red |
 
 
-### Caution
-
 This monitor can potentially register hundred of new metrics, depending on how 
 many hosta and vms you are configuring. By default, the Machine Agent will only report 200 
 metrics to the controller, so you may need to increase that limit when 
@@ -183,26 +148,14 @@ when starting the Machine Agent, like this:
 
     java -Dappdynamics.agent.maxMetrics=1000 -jar machineagent.jar
 
-## Password Encryption Support
-
-To avoid setting the clear text password in the config.yml, please follow the process to encrypt the password and set the encryptedPassword and the encryptionKey in the config.yml
-
-1.  To encrypt password from the commandline go to `<Machine_Agent>`/monitors/VMWareMonitor dir and run the below common
-
-<pre>java -cp "vsphere-monitoring-extension.jar" com.appdynamics.extensions.crypto.Encryptor myKey myPassword</pre>
+## Credentials Encryption
+Please visit [this page](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-use-Password-Encryption-with-Extensions/ta-p/29397) to get detailed instructions on password encryption. The steps in this document will guide you through the whole process.
 
 ## Workbench
 
-Workbench is a feature by which you can preview the metrics before registering it with the controller. This is useful if you want to fine tune the configurations. Workbench is embedded into the extension jar.
+Workbench is an inbuilt feature provided with each extension in order to assist you to fine tune the extension setup before you actually deploy it on the controller. Please review the following document on [How to use the Extensions WorkBench](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-use-the-Extensions-WorkBench/ta-p/30130).
 
-To use the workbench
 
-* Follow all the installation steps
-* Start the workbench with the command
-~~~
-  java -jar /path/to/MachineAgent/monitors/VMWareMonitor/vsphere-monitoring-extension.jar
-  This starts an http server at http://host:9090/. This can be accessed from the browser.
-~~~
 * If the server is not accessible from outside/browser, you can use the following end points to see the list of registered metrics and errors.
 ~~~
     #Get the stats
@@ -213,16 +166,34 @@ To use the workbench
 * You can make the changes to config.yml and validate it from the browser or the API
 * Once the configuration is complete, you can kill the workbench and start the Machine Agent
 
+## Troubleshooting
+Please follow the steps listed in this [troubleshooting-document](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-troubleshoot-missing-custom-metrics-or-extensions/ta-p/28695) in order to troubleshoot your issue. These are a set of common issues that customers might have faced during the installation of the extension. If these don't solve your issue, please follow the last step on the [troubleshooting-document](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-troubleshoot-missing-custom-metrics-or-extensions/ta-p/28695) to contact the support team.
+
+## Support Tickets
+
+If after going through the [Troubleshooting Document](https://community.appdynamics.com/t5/Knowledge-Base/How-do-I-troubleshoot-missing-custom-metrics-or-extensions/ta-p/28695) you have not been able to get your extension working, please file a ticket with the following information:
+
+1. Stop the running machine agent.
+2. Delete all existing logs under <MachineAgent>/logs.
+3. Please enable debug logging by editing the file <MachineAgent>/conf/logging/log4j.xml. Change the level value of the following <logger> elements to debug.
+    ```
+    <logger name="com.singularity">
+    <logger name="com.appdynamics">
+   ```
+4. Start the machine agent and please let it run for 10 mins. Then zip and upload all the logs in the directory <MachineAgent>/logs/*.
+   Attach the zipped <MachineAgent>/conf/* directory.
+5. Attach the zipped <MachineAgent>/monitors/ExtensionFolderYouAreHavingIssuesWith directory.
+
+For any support related questions, you can also contact help@appdynamics.com.
+
 ## Contributing
 
-Always feel free to fork and contribute any changes directly via GitHub.
+Always feel free to fork and contribute any changes directly here on [GitHub](https://github.com/Appdynamics/vmware-vsphere-monitoring-extension).
 
-## Community
-
-Latest Version: 3.0.2
-
-Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/vmware-vsphere-monitoring-extension/) community.
-
-## Support
-
-For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto:help@appdynamics.com).
+## Version
+|          Name            |  Version   |
+|--------------------------|------------|
+|Extension Version         |3.0.2       |
+|Controller Compatibility  |4.5 or Later|
+|Machine Agent Version     |4.5.13+     |
+|Last Update               |10/02/2021  |
